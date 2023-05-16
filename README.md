@@ -18,8 +18,8 @@
 
 ### TODO
 
-- [] improvement `tb_client.hpp` impl
-- [] upgrade zig 0.9.1 (stage1) to zig 0.11.0 (stage3) - pkg manager (choose cmake or zig onnly)
+- [ ] improvement `tb_client.hpp` impl
+- [ ] upgrade zig 0.9.1 (stage1) to zig 0.11.0 (stage3) - pkg manager (choose cmake or zig only)
 
 
 ## License
