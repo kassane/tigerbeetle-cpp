@@ -35,4 +35,5 @@
 /zig-cache/
 /zig-out/
 /.vscode/
+/.cache/
 /vendor/

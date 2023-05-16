@@ -9,7 +9,7 @@
 **Libraries**
 - asio standalone v1.28.0
 - fmtlib v10.0.0
-- TigerBeetle C client library v0.13.6
+- TigerBeetle C client library v0.13.9
 
 **Tools**
 - cmake v3.14 or higher (optional)
