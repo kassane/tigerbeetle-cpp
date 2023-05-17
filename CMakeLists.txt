@@ -20,7 +20,7 @@ add_executable(${PROJECT_NAME}
     "include/tb_client.hpp"
     "src/main.cpp"
 )
-target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra)
+target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -fno-sanitize=all)
 target_link_libraries(${PROJECT_NAME}
     PUBLIC TigerBeetle
     PRIVATE $<TARGET_NAME_IF_EXISTS:Threads::Threads> fmt

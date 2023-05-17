@@ -18,27 +18,32 @@ a source language processor.
 
 #pragma once
 #include <array>
-#include <asio.hpp>
+// #include <asio/io_context_strand.hpp>
+// #include <asio/strand.hpp>
 #include <condition_variable>
-#include <cstddef>
 #include <fmt/color.h>
-#include <fmt/format.h>
-#include <iterator>
-#include <memory>
+#include <fmt/core.h>
+#include <memory.h>
 #include <mutex>
-#include <string>
-#include <tb_client.h>
-#include <vector>
 
-namespace TigerBeetle {
+namespace tigerbeetle {
+#include <tb_client.h>
+
 constexpr size_t MAX_MESSAGE_SIZE = (1024 * 1024) - 128;
 constexpr size_t MAX_BATCHES = 100;
 constexpr size_t TRANSFERS_PER_BATCH = MAX_MESSAGE_SIZE / sizeof(tb_transfer_t);
 constexpr size_t TRANSFERS_SIZE = sizeof(tb_transfer_t) * TRANSFERS_PER_BATCH;
 
+template <std::size_t N> using make_account = std::array<tb_account_t, N>;
+template <std::size_t N> using make_transfer = std::array<tb_transfer_t, N>;
+template <std::size_t N> using accountID = std::array<tb_uint128_t, N>;
+template <std::size_t N> using transferID = std::array<tb_uint128_t, N>;
+template <std::size_t N> using transfer = make_transfer<N>;
+template <std::size_t N> using account = make_account<N>;
+
 // Synchronization context between the callback and the main thread.
 struct CompletionContext {
-  std::vector<uint8_t> reply;
+  std::array<uint8_t, MAX_MESSAGE_SIZE> reply;
   int size;
   bool completed;
   // In this example we synchronize using a condition variable:
@@ -51,121 +56,48 @@ inline auto get_time_ms() {
              std::chrono::steady_clock::now().time_since_epoch())
       .count();
 }
-void on_completion([[maybe_unused]] uintptr_t context,
-                   [[maybe_unused]] tb_client_t client, tb_packet_t *packet,
-                   const uint8_t *data, uint32_t size);
 
-class Client {
-
-  std::string host_;
-  tb_client_t client_{};
-  asio::strand<asio::io_context::executor_type> strand_;
-  tb_packet_list_t packets_pool{};
-  std::shared_ptr<tb_packet_t> packet{};
-  std::shared_ptr<tb_packet_list_t> packet_list{};
-  std::shared_ptr<CompletionContext> ctx_;
-  std::size_t acc_length{};
-
-public:
-  explicit Client() = delete;
-  Client(asio::io_context &io, CompletionContext &ctx,
-         const std::string &address);
-  ~Client();
-  std::shared_ptr<tb_packet_t> acquire_packet(tb_packet_list_t *packet_list);
-  void release_packet(tb_packet_list_t *packet_list, tb_packet_t *packet);
-  void send_request(tb_client_t client,
-                    std::shared_ptr<tb_packet_list_t> packets,
-                    std::shared_ptr<CompletionContext> ctx);
-  void completion_context_init(std::shared_ptr<CompletionContext> ctx);
-  void completion_context_destroy(std::shared_ptr<CompletionContext> ctx);
-  template <std::size_t len> std::array<tb_account_t, len> make_accounts() {
-    acc_length = len;
-    return std::array<tb_account_t, len>();
-  }
-  [[nodiscard]] auto accounts_size() const -> std::size_t {
-    return sizeof(tb_account_t) * acc_length;
-  };
-  [[nodiscard]] std::shared_ptr<tb_packet_t> get_packet() const {
-    return packet;
-  }
-  auto get_packet_list() const { return packet_list; }
-  [[nodiscard]] tb_packet_list_t get_packets_pool() const {
-    return packets_pool;
-  }
-  auto get_context() const { return ctx_; }
-  auto get_client() const { return client_; }
-  void account_init(auto &accs);
-  void transfers(auto &accounts);
-};
-
-inline Client::Client(asio::io_context &io, CompletionContext &ctx,
-                      const std::string &address)
-    : host_(std::move(address)), strand_(io.get_executor()), ctx_(&ctx) {
-  TB_STATUS status = tb_client_init(
-      &client_,       // Output client.
-      &packets_pool,  // Output packet list.
-      0,              // Cluster ID.
-      host_.c_str(),  // Cluster addresses.
-      host_.length(), // Cluster addr size
-      32, // MaxConcurrency, could be 1, since it's a single-threaded example.
-      0,  // No need for a global context.
-      &on_completion // Completion callback.
-  );
-
-  if (status != TB_STATUS_SUCCESS) {
-    fmt::print(stderr, fmt::fg(fmt::color::crimson) | fmt::emphasis::bold,
-               "Failed to initialize tb_client. (ret={})\n",
-               fmt::underlying(status));
-    std::exit(-1);
-  }
-  completion_context_init(ctx_);
-}
-inline Client::~Client() {
-  tb_client_deinit(client_);
-  completion_context_destroy(ctx_);
-}
 inline std::shared_ptr<tb_packet_t>
-Client::acquire_packet(tb_packet_list_t *packet_list) {
+acquire_packet(tb_packet_list_t &packet_list) {
   // This sample is single-threaded,
   // In real use, this function should be thread-safe.
-  packet = std::make_shared<tb_packet_t>(packet_list->head);
+  auto packet = std::make_shared<tb_packet_t>(packet_list.head);
 
   if (packet == nullptr) {
-    fmt::print(stderr, fmt::fg(fmt::color::crimson) | fmt::emphasis::bold,
-               "Too many concurrent requests.\n");
+    fmt::print("Too many concurrent requests\n");
     std::exit(-1);
   }
 
-  packet_list->head = packet->next;
+  packet_list.head = packet->next;
   packet->next = nullptr;
 
-  if (packet_list->head == nullptr) {
-    packet_list->tail = nullptr;
+  if (packet_list.head == nullptr) {
+    packet_list.tail = nullptr;
   }
 
   return packet;
 }
 
-inline void Client::release_packet(tb_packet_list_t *packet_list,
-                                   tb_packet_t *packet) {
+inline void release_packet(tb_packet_list_t &packet_list,
+                           std::shared_ptr<tb_packet_t> packet) {
   // This sample is single-threaded,
   // In real use, this function should be thread-safe.
-  if (packet_list->head == nullptr) {
-    packet_list->head = packet;
-    packet_list->tail = packet;
+  if (packet_list.head == nullptr) {
+    packet_list.head = packet.get();
+    packet_list.tail = packet.get();
   } else {
-    packet_list->tail->next = packet;
-    packet_list->tail = packet;
+    packet_list.tail->next = packet.get();
+    packet_list.tail = packet.get();
   }
 }
 
-inline void Client::send_request(tb_client_t client,
-                                 std::shared_ptr<tb_packet_list_t> packets,
-                                 std::shared_ptr<CompletionContext> ctx) {
-  std::unique_lock<std::mutex> lock(ctx->mutex);
-  ctx->completed = false;
-  tb_client_submit(client, packets.get());
-  ctx->cv.wait(lock, [&ctx]() { return ctx->completed; });
+inline void send_request(tb_client_t client, tb_packet_list_t &packets,
+                         CompletionContext &ctx) {
+  std::lock_guard<std::mutex> guard(ctx.mutex);
+  std::unique_lock<std::mutex> lock(ctx.mutex);
+  ctx.completed = false;
+  tb_client_submit(client, &packets);
+  ctx.cv.wait(lock, [&ctx]() { return ctx.completed; });
 }
 inline void on_completion([[maybe_unused]] uintptr_t context,
                           [[maybe_unused]] tb_client_t client,
@@ -173,146 +105,20 @@ inline void on_completion([[maybe_unused]] uintptr_t context,
                           uint32_t size) {
   auto *ctx = static_cast<CompletionContext *>(packet->user_data);
   std::lock_guard<std::mutex> lock(ctx->mutex);
-  if (size < MAX_MESSAGE_SIZE)
-    ctx->reply.resize(size);
-  else
-    ctx->reply.resize(MAX_MESSAGE_SIZE);
   std::copy(data, data + size, ctx->reply.begin());
   ctx->size = size;
   ctx->completed = true;
   ctx->cv.notify_one();
 }
 
-inline void
-Client::completion_context_init(std::shared_ptr<CompletionContext> ctx) {
-  ctx->reply.resize(MAX_MESSAGE_SIZE);
-  ctx->size = 0;
-  ctx->completed = false;
+inline void completion_context_init(CompletionContext &ctx) {
+  ctx.size = 0;
+  ctx.completed = false;
 }
 
-inline void
-Client::completion_context_destroy(std::shared_ptr<CompletionContext> ctx) {
-  ctx->reply.clear();
-  ctx->size = 0;
-  ctx->completed = false;
+inline void completion_context_destroy(CompletionContext &ctx) {
+  ctx.size = 0;
+  ctx.completed = false;
 }
 
-void Client::transfers(auto &accounts) {
-  fmt::println("Creating transfers...\n");
-  long max_latency_ms = 0;
-  long total_time_ms = 0;
-  for (std::size_t i = 0; i < MAX_BATCHES; i++) {
-    tb_transfer_t transfers[TRANSFERS_PER_BATCH];
-
-    // Zeroing the memory, so we don't have to initialize every field.
-    memset(transfers, 0, TRANSFERS_SIZE);
-
-    for (std::size_t j = 0; j < TRANSFERS_PER_BATCH; j++) {
-      transfers[j].id = j + 1 + (i * TRANSFERS_PER_BATCH);
-      for (auto &&account : accounts) {
-        transfers[j].debit_account_id = account.id;
-        transfers[j].credit_account_id = account.id;
-      }
-      transfers[j].code = 2;
-      transfers[j].ledger = 777;
-      transfers[j].amount = 1;
-    }
-
-    // Acquiring a packet for this request:
-    packet = acquire_packet(&packets_pool);
-    packet->operation =
-        TB_OPERATION_CREATE_TRANSFERS;    // The operation to be performed.
-    packet->data = transfers;             // The data to be sent.
-    packet->data_size = MAX_MESSAGE_SIZE; //
-    packet->user_data = &ctx_;            // User-defined context.
-    packet->status = TB_PACKET_OK;        // Will be set when the reply arrives.
-
-    long long now = get_time_ms();
-
-    packet_list->head = packet.get();
-    packet_list->tail = packet.get();
-    send_request(client_, packet_list, ctx_);
-
-    long elapsed_ms = get_time_ms() - now;
-    if (elapsed_ms > max_latency_ms)
-      max_latency_ms = elapsed_ms;
-    total_time_ms += elapsed_ms;
-
-    if (packet->status != TB_PACKET_OK) {
-      // Checking if the request failed:
-      fmt::println("Error calling create_transfers (ret={})\n", packet->status);
-      exit(-1);
-    }
-
-    // Releasing the packet, so it can be used in a next request.
-    release_packet(&packets_pool, packet.get());
-
-    if (ctx_->size != 0) {
-      // Checking for errors creating the accounts:
-      tb_create_transfers_result_t *results =
-          reinterpret_cast<tb_create_transfers_result_t *>(ctx_->reply.data());
-      int results_len = ctx_->size / sizeof(tb_create_transfers_result_t);
-      fmt::println("create_transfers results:\n");
-      for (int i = 0; i < results_len; i++) {
-        fmt::println("index={0}, ret={1}\n", results[i].index,
-                     results[i].result);
-      }
-      exit(-1);
-    }
-  }
-
-  fmt::println("Transfers created successfully");
-  fmt::println("============================================");
-  fmt::println("{} transfers per second",
-               (MAX_BATCHES * TRANSFERS_PER_BATCH * 1000) / total_time_ms);
-  fmt::println("create_transfers max p100 latency per {} transfers = {}ms",
-               TRANSFERS_PER_BATCH, max_latency_ms);
-  fmt::println("total {} transfers in {}ms", MAX_BATCHES * TRANSFERS_PER_BATCH,
-               total_time_ms);
-}
-
-void Client::account_init(auto &accs) {
-  tb_account_t accounts[acc_length];
-  std::memcpy(accounts, accs.data(), acc_length);
-
-  // Acquiring a packet for this request:
-  packet = acquire_packet(&packets_pool);
-  packet->operation =
-      TB_OPERATION_CREATE_ACCOUNTS;    // The operation to be performed.
-  packet->data = accounts;             // The data to be sent.
-  packet->data_size = accounts_size(); //
-  packet->user_data = &ctx_;           // User-defined context.
-  packet->status = TB_PACKET_OK;       // Will be set when the
-                                       // reply arrives.
-
-  fmt::println("Creating accounts...");
-
-  packet_list->head = packet.get();
-  packet_list->tail = packet.get();
-  send_request(client_, packet_list, ctx_);
-
-  if (packet->status != TB_PACKET_OK) {
-    // Checking if the request failed:
-    fmt::print(stderr, fmt::fg(fmt::color::crimson) | fmt::emphasis::bold,
-               "Error calling create_accounts (ret={})\n", packet->status);
-    exit(-1);
-  }
-
-  // Releasing the packet, so it can be used in a next request.
-  release_packet(&packets_pool, packet.get());
-
-  if (ctx_->size != 0) {
-    // Checking for errors creating the accounts:
-    tb_create_accounts_result_t *results =
-        reinterpret_cast<tb_create_accounts_result_t *>(ctx_->reply.data());
-    int results_len = ctx_->size / sizeof(tb_create_accounts_result_t);
-    fmt::println("create_account results:");
-    for (int i = 0; i < results_len; i++) {
-      fmt::println("index={0}, ret={1}", results[i].index, results[i].result);
-    }
-    exit(-1);
-  }
-
-  fmt::println("Accounts created successfully");
-}
-} // namespace TigerBeetle
+} // namespace tigerbeetle
