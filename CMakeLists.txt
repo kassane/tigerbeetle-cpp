@@ -6,13 +6,15 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(cmake/deps.cmake)
-
+include(cmake/find_tigerbeetle.cmake)
 find_package(Threads REQUIRED)
+find_library(TigerBeetle PATH ${TIGERBEETLE_LIBRARY_DIR})
 if(WIN32)
     link_libraries(ws2_32 wmsock)
 endif()
 
 include_directories(include)
+include_directories(${TIGERBEETLE_INCLUDE_DIR})
 
 add_executable(${PROJECT_NAME}
     "include/tb_client.hpp"
@@ -20,6 +22,6 @@ add_executable(${PROJECT_NAME}
 )
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra)
 target_link_libraries(${PROJECT_NAME}
-    PUBLIC "${CMAKE_SOURCE_DIR}/vendor/lib/libtb_client.a"
+    PUBLIC TigerBeetle
     PRIVATE $<TARGET_NAME_IF_EXISTS:Threads::Threads> fmt
 )

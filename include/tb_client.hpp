@@ -101,24 +101,24 @@ public:
 inline Client::Client(asio::io_context &io, CompletionContext &ctx,
                       const std::string &address)
     : host_(std::move(address)), strand_(io.get_executor()), ctx_(&ctx) {
-    TB_STATUS status = tb_client_init(
-        &client_,       // Output client.
-        &packets_pool,  // Output packet list.
-        0,              // Cluster ID.
-        host_.c_str(),  // Cluster addresses.
-        host_.length(), // Cluster addr size
-        32, // MaxConcurrency, could be 1, since it's a single-threaded example.
-        0,  // No need for a global context.
-        &on_completion // Completion callback.
-    );
+  TB_STATUS status = tb_client_init(
+      &client_,       // Output client.
+      &packets_pool,  // Output packet list.
+      0,              // Cluster ID.
+      host_.c_str(),  // Cluster addresses.
+      host_.length(), // Cluster addr size
+      32, // MaxConcurrency, could be 1, since it's a single-threaded example.
+      0,  // No need for a global context.
+      &on_completion // Completion callback.
+  );
 
-    if (status != TB_STATUS_SUCCESS) {
-      fmt::print(stderr, fmt::fg(fmt::color::crimson) | fmt::emphasis::bold,
-                 "Failed to initialize tb_client. (ret={})\n",
-                 fmt::underlying(status));
-      std::exit(-1);
-    }
-    completion_context_init(ctx_);
+  if (status != TB_STATUS_SUCCESS) {
+    fmt::print(stderr, fmt::fg(fmt::color::crimson) | fmt::emphasis::bold,
+               "Failed to initialize tb_client. (ret={})\n",
+               fmt::underlying(status));
+    std::exit(-1);
+  }
+  completion_context_init(ctx_);
 }
 inline Client::~Client() {
   tb_client_deinit(client_);

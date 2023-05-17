@@ -1,4 +1,6 @@
+Set(FETCHCONTENT_QUIET FALSE)
 include(FetchContent)
+
 message(STATUS "-----------------------------------------")
 message(STATUS "ASIO    =>  Downloading")
 FetchContent_Declare(
@@ -43,7 +45,7 @@ FetchContent_MakeAvailable(asio)
 message(STATUS "FMT     =>  Downloaded")
 FetchContent_MakeAvailable(fmt)
 message(STATUS "TB      =>  Downloaded")
-FetchContent_MakeAvailable(fmt)
+FetchContent_MakeAvailable(tb)
 message(STATUS "-----------------------------------------")
 
 add_subdirectory(${FMT_PATH} ${CMAKE_CURRENT_BINARY_DIR}/fmt EXCLUDE_FROM_ALL)

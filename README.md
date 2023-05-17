@@ -4,7 +4,7 @@
 
 ### Prerequisites
 
- C++ version: 14 or higher
+ C++ version: 20
 
 **Libraries**
 - asio standalone v1.28.0
