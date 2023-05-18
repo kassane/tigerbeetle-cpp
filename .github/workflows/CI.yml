@@ -14,16 +14,22 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-      # - uses: goto-bus-stop/setup-zig@v2
-      #   with:
-      #     version: 0.9.1
+      - uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: 0.9.1
 
       - name: Install buildtools
-        run: sudo apt update;sudo apt install -y build-essential cmake
+        run: sudo apt update;sudo apt install -y curl xz-utils cmake
 
-      - name: Build Summary
+      - name: CMake - Preconfigure
+        run: cmake -B build -DCMAKE_CXX_COMPILER=$PWD/scripts/zigcxx.sh
+
+      - name: Build TigerBeetle
         run: |
-            cmake -B build -DCMAKE_BUILD_TYPE=Release; \
-            sudo sh build/_deps/tb-src/scripts/install_zig.sh; \
-            sudo sh build/_deps/tb-src/scripts/install.sh; \
-            cmake --build build --parallel --config release
+            cd build/_deps/tb-src; \
+            zig build c_client; \
+            zig build test; \
+            cd ../../../
+
+      - name: Build C++ client
+        run: cmake --build build --parallel
