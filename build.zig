@@ -27,19 +27,13 @@ pub fn build(b: *std.Build) void {
     });
     exe.addIncludePath("include");
     exe.addCSourceFile("src/main.cpp", &.{
-        "-std=c++14",
+        "-std=c++20",
         "-Wall",
         "-Wextra",
     });
 
     // Dependencies
 
-    // asio
-    const libasio_dep = b.dependency("asio", .{
-        .target = target,
-        .optimize = optimize,
-    });
-    const libasio = libasio_dep.artifact("asio");
     // fmt
     const libfmt_dep = b.dependency("fmt", .{
         .target = target,
@@ -53,12 +47,10 @@ pub fn build(b: *std.Build) void {
     // });
     // const libtb = libtb_dep.artifact("tigerbeetle");
 
-    exe.linkLibrary(libasio);
     exe.linkLibrary(libfmt);
     // exe.linkLibrary(libtb);
     exe.linkLibCpp(); // static-linking llvm-libcxx/abi + linking OS-libc
 
-    exe.installLibraryHeaders(libasio); // get copy asio include
     exe.installLibraryHeaders(libfmt); // get copy fmt include
 
     b.installArtifact(exe); // get copy binaries from: zig-cache/ to zig-out/

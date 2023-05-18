@@ -18,9 +18,6 @@ a source language processor.
 
 #pragma once
 #include <array>
-// #include <asio/io_context_strand.hpp>
-// #include <asio/strand.hpp>
-#include <condition_variable>
 #include <fmt/color.h>
 #include <fmt/core.h>
 #include <memory.h>
@@ -30,35 +27,25 @@ namespace tigerbeetle {
 #include <tb_client.h>
 
 constexpr size_t MAX_MESSAGE_SIZE = (1024 * 1024) - 128;
-constexpr size_t MAX_BATCHES = 100;
-constexpr size_t TRANSFERS_PER_BATCH = MAX_MESSAGE_SIZE / sizeof(tb_transfer_t);
-constexpr size_t TRANSFERS_SIZE = sizeof(tb_transfer_t) * TRANSFERS_PER_BATCH;
-
-template <std::size_t N> using make_account = std::array<tb_account_t, N>;
-template <std::size_t N> using make_transfer = std::array<tb_transfer_t, N>;
 template <std::size_t N> using accountID = std::array<tb_uint128_t, N>;
 template <std::size_t N> using transferID = std::array<tb_uint128_t, N>;
-template <std::size_t N> using transfer = make_transfer<N>;
-template <std::size_t N> using account = make_account<N>;
-
+template <std::size_t N> using transfer = std::array<tb_transfer_t, N>;
+;
+template <std::size_t N> using account = std::array<tb_account_t, N>;
+;
+template <std::size_t N> auto make_account() { return account<N>{}; }
+template <std::size_t N> auto make_transfer() { return transfer<N>{}; }
 // Synchronization context between the callback and the main thread.
 struct CompletionContext {
   std::array<uint8_t, MAX_MESSAGE_SIZE> reply;
   int size;
-  bool completed;
   // In this example we synchronize using a condition variable:
-  std::condition_variable cv;
   std::mutex mutex;
+  CompletionContext() { size = 0; }
+  ~CompletionContext() { size = 0; }
 };
 
-inline auto get_time_ms() {
-  return std::chrono::duration_cast<std::chrono::milliseconds>(
-             std::chrono::steady_clock::now().time_since_epoch())
-      .count();
-}
-
-inline std::shared_ptr<tb_packet_t>
-acquire_packet(tb_packet_list_t &packet_list) {
+inline auto acquire_packet(tb_packet_list_t &packet_list) {
   // This sample is single-threaded,
   // In real use, this function should be thread-safe.
   auto packet = std::make_shared<tb_packet_t>(packet_list.head);
@@ -94,10 +81,7 @@ inline void release_packet(tb_packet_list_t &packet_list,
 inline void send_request(tb_client_t client, tb_packet_list_t &packets,
                          CompletionContext &ctx) {
   std::lock_guard<std::mutex> guard(ctx.mutex);
-  std::unique_lock<std::mutex> lock(ctx.mutex);
-  ctx.completed = false;
   tb_client_submit(client, &packets);
-  ctx.cv.wait(lock, [&ctx]() { return ctx.completed; });
 }
 inline void on_completion([[maybe_unused]] uintptr_t context,
                           [[maybe_unused]] tb_client_t client,
@@ -107,18 +91,5 @@ inline void on_completion([[maybe_unused]] uintptr_t context,
   std::lock_guard<std::mutex> lock(ctx->mutex);
   std::copy(data, data + size, ctx->reply.begin());
   ctx->size = size;
-  ctx->completed = true;
-  ctx->cv.notify_one();
 }
-
-inline void completion_context_init(CompletionContext &ctx) {
-  ctx.size = 0;
-  ctx.completed = false;
-}
-
-inline void completion_context_destroy(CompletionContext &ctx) {
-  ctx.size = 0;
-  ctx.completed = false;
-}
-
 } // namespace tigerbeetle

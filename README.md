@@ -7,7 +7,6 @@
  C++ version: 20
 
 **Libraries**
-- asio standalone v1.28.0
 - fmtlib v10.0.0
 - TigerBeetle C client library v0.13.9
 
@@ -18,7 +17,7 @@
 
 ### TODO
 
-- [ ] improvement `tb_client.hpp` impl
+- [x] improvement `tb_client.hpp` impl
 - [ ] upgrade zig 0.9.1 (stage1) to zig 0.11.0 (stage3) - pkg manager (choose cmake or zig only)
 
 

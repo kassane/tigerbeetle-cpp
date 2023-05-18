@@ -14,7 +14,7 @@ jobs:
           fetch-depth: 0
       - uses: goto-bus-stop/setup-zig@v2
         with:
-          version: 0.9.1
+          version: master
 
       - name: Install tools
         run: |
@@ -29,9 +29,13 @@ jobs:
       - name: Build TigerBeetle
         run: |
             cd build/_deps/tb-src; \
-            zig build c_client; \
-            zig build test; \
+            sh scripts/install_zig.sh
+            ./zig/zig build c_client; \
+            ./zig/zig build test; \
             cd ../../../
 
       - name: Build C++ client
         run: cmake --build build --parallel
+      
+      - name: Run C++ client
+        run: ./build/tb_cpp
