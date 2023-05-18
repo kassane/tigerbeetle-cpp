@@ -6,9 +6,7 @@ jobs:
   build:
     strategy:
       fail-fast: false
-      matrix:
-        runs-on: ubuntu-latest
-    runs-on: ${{ matrix.runs-on }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
@@ -18,11 +16,15 @@ jobs:
         with:
           version: 0.9.1
 
-      - name: Install buildtools
-        run: sudo apt update;sudo apt install -y curl xz-utils cmake
+      - name: Install tools
+        run: |
+            sudo apt update; \
+            sudo apt install -y curl xz-utils cmake
 
       - name: CMake - Preconfigure
-        run: cmake -B build -DCMAKE_CXX_COMPILER=$PWD/scripts/zigcxx.sh
+        run: |
+            chmod +x $PWD/scripts/zigcxx.sh
+            cmake -B build -DCMAKE_CXX_COMPILER=$PWD/scripts/zigcxx.sh
 
       - name: Build TigerBeetle
         run: |
