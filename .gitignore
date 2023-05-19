@@ -37,3 +37,4 @@
 /.vscode/
 /.cache/
 /vendor/
+*.tigerbeetle

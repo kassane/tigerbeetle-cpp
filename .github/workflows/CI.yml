@@ -24,15 +24,7 @@ jobs:
       - name: CMake - Preconfigure
         run: |
             chmod +x $PWD/scripts/zigcxx.sh
-            cmake -B build -DCMAKE_CXX_COMPILER=$PWD/scripts/zigcxx.sh
-
-      - name: Build TigerBeetle
-        run: |
-            cd build/_deps/tb-src; \
-            sh scripts/install_zig.sh
-            ./zig/zig build c_client; \
-            ./zig/zig build test; \
-            cd ../../../
+            cmake -B build -DRUN_TB_SERVER=ON -DCMAKE_CXX_COMPILER=$PWD/scripts/zigcxx.sh
 
       - name: Build C++ client
         run: cmake --build build --parallel

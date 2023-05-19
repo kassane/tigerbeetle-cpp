@@ -18,10 +18,10 @@ a source language processor.
 
 #pragma once
 #include <array>
+#include <chrono>
 #include <fmt/color.h>
 #include <fmt/core.h>
-#include <memory.h>
-#include <mutex>
+#include <memory>
 
 namespace tigerbeetle {
 #include <tb_client.h>
@@ -39,16 +39,13 @@ template <std::size_t N> auto make_transfer() { return transfer<N>{}; }
 struct CompletionContext {
   std::array<uint8_t, MAX_MESSAGE_SIZE> reply;
   int size;
-  // In this example we synchronize using a condition variable:
-  std::mutex mutex;
-  CompletionContext() { size = 0; }
-  ~CompletionContext() { size = 0; }
+  bool completed;
 };
 
-inline auto acquire_packet(tb_packet_list_t &packet_list) {
+inline tb_packet_t *acquire_packet(tb_packet_list_t &packet_list) {
   // This sample is single-threaded,
   // In real use, this function should be thread-safe.
-  auto packet = std::make_shared<tb_packet_t>(packet_list.head);
+  tb_packet_t *packet = packet_list.head;
 
   if (packet == nullptr) {
     fmt::print("Too many concurrent requests\n");
@@ -65,31 +62,85 @@ inline auto acquire_packet(tb_packet_list_t &packet_list) {
   return packet;
 }
 
-inline void release_packet(tb_packet_list_t &packet_list,
-                           std::shared_ptr<tb_packet_t> packet) {
+inline void release_packet(tb_packet_list_t &packet_list, tb_packet_t *packet) {
   // This sample is single-threaded,
   // In real use, this function should be thread-safe.
   if (packet_list.head == nullptr) {
-    packet_list.head = packet.get();
-    packet_list.tail = packet.get();
+    packet_list.head = packet;
+    packet_list.tail = packet;
   } else {
-    packet_list.tail->next = packet.get();
-    packet_list.tail = packet.get();
+    packet_list.tail->next = packet;
+    packet_list.tail = packet;
   }
-}
-
-inline void send_request(tb_client_t client, tb_packet_list_t &packets,
-                         CompletionContext &ctx) {
-  std::lock_guard<std::mutex> guard(ctx.mutex);
-  tb_client_submit(client, &packets);
 }
 inline void on_completion([[maybe_unused]] uintptr_t context,
                           [[maybe_unused]] tb_client_t client,
                           tb_packet_t *packet, const uint8_t *data,
                           uint32_t size) {
-  auto *ctx = static_cast<CompletionContext *>(packet->user_data);
-  std::lock_guard<std::mutex> lock(ctx->mutex);
+  auto ctx = static_cast<CompletionContext *>(packet->user_data);
   std::copy(data, data + size, ctx->reply.begin());
   ctx->size = size;
+  ctx->completed = true;
 }
+
+inline void send_request(tb_client_t client, tb_packet_list_t *packets,
+                         CompletionContext *ctx) {
+  // Submits the request asynchronously:
+  ctx->completed = false;
+  tb_client_submit(client, packets);
+  while (!ctx->completed) {
+    // Wait for completion
+  }
+}
+
+enum class LogLevel {
+  INFO,
+  DEBUG,
+  ERROR,
+  WARN,
+  TRACE,
+};
+
+class Logger {
+public:
+  static void println(LogLevel level, const std::string &message) {
+    fmt::color color = getLogLevelColor(level);
+    fmt::print(fg(color), "[{}] {}\n", getLogLevelString(level), message);
+  }
+
+private:
+  static fmt::color getLogLevelColor(LogLevel level) {
+    switch (level) {
+    case LogLevel::INFO:
+      return fmt::color::green;
+    case LogLevel::DEBUG:
+      return fmt::color::cyan;
+    case LogLevel::ERROR:
+      return fmt::color::red;
+    case LogLevel::WARN:
+      return fmt::color::yellow;
+    case LogLevel::TRACE:
+      return fmt::color::white;
+    }
+    return static_cast<fmt::color>(
+        0x000000); // Default color if the level is unknown
+  }
+
+  static std::string getLogLevelString(LogLevel level) {
+    switch (level) {
+    case LogLevel::INFO:
+      return "INFO";
+    case LogLevel::DEBUG:
+      return "DEBUG";
+    case LogLevel::ERROR:
+      return "ERROR";
+    case LogLevel::WARN:
+      return "WARN";
+    case LogLevel::TRACE:
+      return "TRACE";
+    }
+    return "UNKNOWN"; // Default log level if unknown
+  }
+};
+
 } // namespace tigerbeetle
