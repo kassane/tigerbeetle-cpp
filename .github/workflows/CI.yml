@@ -6,7 +6,9 @@ jobs:
   build:
     strategy:
       fail-fast: false
-    runs-on: ubuntu-latest
+      matrix:
+        runs-on: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.runs-on }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -15,19 +17,13 @@ jobs:
       - uses: goto-bus-stop/setup-zig@v2
         with:
           version: master
-
-      - name: Install tools
-        run: |
-            sudo apt update; \
-            sudo apt install -y curl xz-utils cmake
+      - uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: latest
+          ninjaVersion: latest
 
       - name: CMake - Preconfigure
-        run: |
-            chmod +x $PWD/scripts/zigcxx.sh
-            cmake -B build -DRUN_TB_SERVER=ON -DCMAKE_CXX_COMPILER=$PWD/scripts/zigcxx.sh
+        run: cmake -B build
 
-      - name: Build C++ client
-        run: cmake --build build --parallel
-      
-      - name: Run C++ client
-        run: ./build/tb_cpp
+      - name: Run C++ client with TigerBeetle
+        run: cmake --build build --target run_with_tb

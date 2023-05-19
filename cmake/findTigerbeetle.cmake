@@ -101,11 +101,53 @@ if(RUN_TB_TEST)
     endif()
 endif()
 
+# Remove generated 0_0.tigerbeetle file
+file(REMOVE ${TIGERBEETLE_ROOT_DIR}/0_0.tigerbeetle)
+
+# Create a custom target to run_with_tb
+add_custom_target(run_with_tb
+   DEPENDS ${PROJECT_NAME}
+   WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
+)
+
+if(WIN32)
+  set(START_TIGERBEETLE_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/scripts/start_tigerbeetle.cmd")
+else()
+  set(START_TIGERBEETLE_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/scripts/start_tigerbeetle.sh")
+endif()
+
+# Run tigerbeetle format command after building my_app
+add_custom_command(TARGET run_with_tb POST_BUILD
+COMMAND ${TIGERBEETLE_ROOT_DIR}/zig-out/bin/tigerbeetle format --cluster=0 --replica=0 --replica-count=1 0_0.tigerbeetle
+  WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
+  COMMENT "Running tigerbeetle format"
+)
+
+# Run tigerbeetle start command after building my_app
+add_custom_command(TARGET run_with_tb POST_BUILD
+  COMMAND ${START_TIGERBEETLE_SCRIPT} --addresses=0.0.0.0:3000 ${TIGERBEETLE_ROOT_DIR}/0_0.tigerbeetle
+  WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
+  COMMAND_ECHO STDOUT
+  COMMENT "Running tigerbeetle start"
+)
+
+# Add a post-build event to kill the tigerbeetle start process after running ${PROJECT_NAME}
+add_custom_command(TARGET run_with_tb POST_BUILD
+    COMMAND ${PROJECT_NAME}
+    COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Killing tigerbeetle start process..."
+    COMMAND ${CMAKE_COMMAND} -E sleep 9  # Delay to ensure ${PROJECT_NAME} has started
+    COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Terminating tigerbeetle start process..."
+    COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red "NOTE: This command may not work on all platforms. Adjust accordingly."
+    COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red "You may need to manually terminate the 'tigerbeetle start' process."
+    WORKING_DIRECTORY  ${TIGERBEETLE_ROOT_DIR}
+    COMMENT "Running ${PROJECT_NAME} with TigerBeetle"
+)
+
 if(RUN_TB_SERVER)
     # Run tigerbeetle format command in the background
     execute_process(
         COMMAND ${TIGERBEETLE_ROOT_DIR}/zig-out/bin/tigerbeetle format --cluster=0 --replica=0 --replica-count=1 0_0.tigerbeetle
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
         RESULT_VARIABLE RUN_WITH_TB_FOMART_RESULT
     )
     if(NOT ${RUN_WITH_TB_FORMAT_RESULT} EQUAL 0)
@@ -115,7 +157,7 @@ if(RUN_TB_SERVER)
     # Run tigerbeetle start command in the background
     execute_process(
         COMMAND ${TIGERBEETLE_ROOT_DIR}/zig-out/bin/tigerbeetle start --addresses=0.0.0.0:3000 "${TIGERBEETLE_ROOT_DIR}/0_0.tigerbeetle"
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
         RESULT_VARIABLE RUN_TIGERBEETLE_START_PID_RESULT
         OUTPUT_VARIABLE TIGERBEETLE_START_PID
     )
@@ -135,14 +177,7 @@ if(RUN_TB_SERVER)
             )
         endif()
     endif()
-
 endif()
-
-# Clean the zig directory
-# execute_process(
-#     COMMAND ${CMAKE_COMMAND} -E remove_directory ${TIGERBEETLE_ROOT_DIR}/zig
-#     RESULT_VARIABLE CLEAN_ZIG_CACHE_RESULT
-# )
   
 if(NOT ${CLEAN_ZIG_CACHE_RESULT} EQUAL 0)
     message(FATAL_ERROR "Failed to clean zig directory.")

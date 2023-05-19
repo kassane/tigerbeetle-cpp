@@ -5,6 +5,12 @@ project(tb_cpp VERSION 0.10 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+if(WIN32)
+    SET(CMAKE_CXX_COMPILER ${CMAKE_SOURCE_DIR}/scripts/zigcxx.bat)
+else()
+    SET(CMAKE_CXX_COMPILER ${CMAKE_SOURCE_DIR}/scripts/zigcxx.sh)
+endif()
+
 option(RUN_INSTALL_ZIG "Run install_zig.sh script" ON)
 option(BUILD_TB_C_CLIENT "Build c_client libraries with Zig" ON)
 option(RUN_TB_SERVER "Run Tigerbeetle server" OFF)
