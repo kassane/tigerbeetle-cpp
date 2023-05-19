@@ -106,16 +106,22 @@ if(RUN_TB_SERVER)
     execute_process(
         COMMAND ${TIGERBEETLE_ROOT_DIR}/zig-out/bin/tigerbeetle format --cluster=0 --replica=0 --replica-count=1 0_0.tigerbeetle
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        COMMAND_BACKGROUND
+        RESULT_VARIABLE RUN_WITH_TB_FOMART_RESULT
     )
+    if(NOT ${RUN_WITH_TB_FORMAT_RESULT} EQUAL 0)
+    message(FATAL_ERROR "Failed to run tigerbeetle format with Zig.")
+    endif()
 
     # Run tigerbeetle start command in the background
     execute_process(
         COMMAND ${TIGERBEETLE_ROOT_DIR}/zig-out/bin/tigerbeetle start --addresses=0.0.0.0:3000
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        COMMAND_BACKGROUND
+        RESULT_VARIABLE RUN_TIGERBEETLE_START_PID_RESULT
         OUTPUT_VARIABLE TIGERBEETLE_START_PID
     )
+    if(NOT ${RUN_TIGERBEETLE_START_PID_RESULT} EQUAL 0)
+    message(FATAL_ERROR "Failed to run tigerbeetle server with Zig.")
+    endif()
 
     # Kill the tigerbeetle start process if needed
     if(TIGERBEETLE_START_PID)
