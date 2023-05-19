@@ -114,7 +114,7 @@ if(RUN_TB_SERVER)
 
     # Run tigerbeetle start command in the background
     execute_process(
-        COMMAND ${TIGERBEETLE_ROOT_DIR}/zig-out/bin/tigerbeetle start --addresses=0.0.0.0:3000
+        COMMAND ${TIGERBEETLE_ROOT_DIR}/zig-out/bin/tigerbeetle start --addresses=0.0.0.0:3000 "${TIGERBEETLE_ROOT_DIR}/0_0.tigerbeetle"
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         RESULT_VARIABLE RUN_TIGERBEETLE_START_PID_RESULT
         OUTPUT_VARIABLE TIGERBEETLE_START_PID
