@@ -58,7 +58,7 @@ jobs:
         run: |
           Copy-Item -Path ".\temp" -Destination "C:\_" -Recurse
 
-       - name: CMake Build - ${{ matrix.arch }}
+      - name: CMake Build - ${{ matrix.arch }}
         shell: msys2 {0}
         run: |
             cd /C/_
