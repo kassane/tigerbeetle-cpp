@@ -53,18 +53,18 @@ pub fn build(b: *std.Build) void {
         .x86 => "x64",
         else => "",
     };
-    const os: []const u8 = switch (target.getOsTag()) {
-        .windows => "windows",
-        .macos => "macos",
-        .linux => "linux",
-        else => "bsd",
-    };
     const abi: []const u8 = switch (target.getAbi()) {
         .gnu => "gnu",
         .musl => "musl",
         else => "msvc",
     };
-    exe.addLibraryPath(b.fmt("build/_deps/tb-src/src/clients/c/lib/{s}-{s}-{s}", .{ arch, os, abi }));
+    const os: []const u8 = switch (target.getOsTag()) {
+        .windows => "windows",
+        .macos => "macos",
+        .linux => b.fmt("linux-{s}", .{abi}),
+        else => "bsd",
+    };
+    exe.addLibraryPath(b.fmt("build/_deps/tb-src/src/clients/c/lib/{s}-{s}", .{ arch, os }));
     exe.linkSystemLibraryName("tb_client");
     exe.linkLibrary(libfmt);
     // exe.linkLibrary(libtb);
