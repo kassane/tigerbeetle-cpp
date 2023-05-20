@@ -20,7 +20,7 @@ set(CMAKE_TIGERBEETLE_LIBS_INIT "")
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64")
-        set(TIGERBEETLE_LIBRARY_DIR ${TIGERBEETLE_ROOT_DIR}/src/clients/c/lib/aarch64-linux-musl)
+        set(TIGERBEETLE_LIBRARY_DIR ${TIGERBEETLE_ROOT_DIR}/src/clients/c/lib/aarch64-linux-gnu)
     else()
         set(TIGERBEETLE_LIBRARY_DIR ${TIGERBEETLE_ROOT_DIR}/src/clients/c/lib/x86_64-linux-gnu)
     endif()
@@ -33,10 +33,10 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     endif()
     set(CMAKE_TIGERBEETLE_LIBS_INIT "libtb_client.a")
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
-        set(TIGERBEETLE_LIBRARY_DIR ${TIGERBEETLE_ROOT_DIR}/src/clients/c/lib/x86_64-windows)
-    else()
+    if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64")
         set(TIGERBEETLE_LIBRARY_DIR ${TIGERBEETLE_ROOT_DIR}/src/clients/c/lib/aarch64-windows)
+    else()
+        set(TIGERBEETLE_LIBRARY_DIR ${TIGERBEETLE_ROOT_DIR}/src/clients/c/lib/x86_64-windows)
     endif()
     set(CMAKE_TIGERBEETLE_LIBS_INIT "tb_client.lib")
 endif()
@@ -79,6 +79,7 @@ endif()
 
 if(BUILD_TB_C_CLIENT)
     # Build c_client with Zig
+    message(STATUS "Build c_client with Zig")
     execute_process(
     COMMAND ${TIGERBEETLE_ROOT_DIR}/zig/zig build c_client ${ZIG_BUILD_TYPE}
     WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
@@ -91,6 +92,7 @@ endif()
 
 if(RUN_TB_TEST)
     # Build and run test with Zig
+    message(STATUS "Build and run TigerBeetle tests with Zig")
     execute_process(
     COMMAND ${TIGERBEETLE_ROOT_DIR}/zig/zig build test ${ZIG_BUILD_TYPE}
     WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}

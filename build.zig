@@ -46,13 +46,30 @@ pub fn build(b: *std.Build) void {
     //     .optimize = optimize,
     // });
     // const libtb = libtb_dep.artifact("tigerbeetle");
-
+    exe.addIncludePath("build/_deps/tb-src/src/clients/c/lib/include");
+    const arch: []const u8 = switch (target.getCpuArch()) {
+        .aarch64 => "aarch64",
+        .x86_64 => "x86_64",
+        .x86 => "x64",
+        else => "",
+    };
+    const os: []const u8 = switch (target.getOsTag()) {
+        .windows => "windows",
+        .macos => "macos",
+        .linux => "linux",
+        else => "bsd",
+    };
+    const abi: []const u8 = switch (target.getAbi()) {
+        .gnu => "gnu",
+        .musl => "musl",
+        else => "msvc",
+    };
+    exe.addLibraryPath(b.fmt("build/_deps/tb-src/src/clients/c/lib/{s}-{s}-{s}", .{ arch, os, abi }));
+    exe.linkSystemLibraryName("tb_client");
     exe.linkLibrary(libfmt);
     // exe.linkLibrary(libtb);
     exe.linkLibCpp(); // static-linking llvm-libcxx/abi + linking OS-libc
-
     exe.installLibraryHeaders(libfmt); // get copy fmt include
-
     b.installArtifact(exe); // get copy binaries from: zig-cache/ to zig-out/
 
     const run_cmd = b.addRunArtifact(exe);
