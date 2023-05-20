@@ -62,6 +62,8 @@ pub fn build(b: *std.Build) void {
     };
     exe.addLibraryPath(b.fmt("build/_deps/tb-src/src/clients/c/lib/{s}-{s}", .{ arch, os }));
     exe.linkSystemLibraryName("tb_client");
+    if (target.isWindows())
+        exe.linkSystemLibrary("ws2_32");
     exe.linkLibrary(libfmt);
     // exe.linkLibrary(libtb);
     exe.linkLibCpp(); // static-linking llvm-libcxx/abi + linking OS-libc
