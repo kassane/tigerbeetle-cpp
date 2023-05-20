@@ -27,7 +27,7 @@ pub fn build(b: *std.Build) void {
     });
     exe.addIncludePath("include");
     exe.addCSourceFile("src/main.cpp", &.{
-        "-std=c++20",
+        "-std=c++14",
         "-Wall",
         "-Wextra",
     });
@@ -49,20 +49,16 @@ pub fn build(b: *std.Build) void {
     exe.addIncludePath("build/_deps/tb-src/src/clients/c/lib/include");
     const arch: []const u8 = switch (target.getCpuArch()) {
         .aarch64 => "aarch64",
-        .x86_64 => "x86_64",
-        .x86 => "x64",
-        else => "",
+        else => "x86_64",
     };
     const abi: []const u8 = switch (target.getAbi()) {
         .gnu => "gnu",
-        .musl => "musl",
-        else => "msvc",
+        else => "musl",
     };
     const os: []const u8 = switch (target.getOsTag()) {
         .windows => "windows",
         .macos => "macos",
-        .linux => b.fmt("linux-{s}", .{abi}),
-        else => "bsd",
+        else => b.fmt("linux-{s}", .{abi}),
     };
     exe.addLibraryPath(b.fmt("build/_deps/tb-src/src/clients/c/lib/{s}-{s}", .{ arch, os }));
     exe.linkSystemLibraryName("tb_client");

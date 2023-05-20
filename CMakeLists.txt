@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.14)
 
 project(tb_cpp VERSION 0.10 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(RUN_INSTALL_ZIG "Run install_zig.sh script" ON)
@@ -14,7 +14,7 @@ include(cmake/deps.cmake)
 include(cmake/findTigerbeetle.cmake)
 find_package(Threads REQUIRED)
 if(WIN32)
-    link_libraries(ws2_32 wmsock)
+    link_libraries(ws2_32)
 endif()
 
 include_directories(include)

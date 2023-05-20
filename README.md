@@ -4,7 +4,7 @@
 
 ### Prerequisites
 
- C++ version: 20
+ C++ version: 14
 
 **Libraries**
 - fmtlib v10.0.0

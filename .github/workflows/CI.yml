@@ -36,7 +36,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include: [{ msystem: CLANG64, arch: x86_64, prefix: /clang64 }, { msystem: CLANG32, arch: i686, prefix: /clang32 }]
+        include: [{ msystem: CLANG64, arch: x86_64, prefix: /clang64 }]
     steps:
       - uses: actions/checkout@v3
         with:
