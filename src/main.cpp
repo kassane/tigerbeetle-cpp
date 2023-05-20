@@ -1,24 +1,53 @@
-// Based:
-// https://github.com/tigerbeetledb/tigerbeetle/blob/main/src/clients/c/samples/main.c
-
+#include <chrono>
 #include <tb_client.hpp>
 
-namespace tb = TigerBeetle;
+namespace tb = tigerbeetle;
+using level = tb::LogLevel;
 
 auto main() -> int {
-  fmt::println("TigerBeetle C++ Sample");
-  fmt::println("Connecting...");
+  constexpr size_t MAX_BATCHES = 100;
+  constexpr size_t TRANSFERS_PER_BATCH =
+      tb::MAX_MESSAGE_SIZE / sizeof(tb::tb_transfer_t);
 
-  asio::io_context io;
-  tb::CompletionContext ctx;
+  tb::Logger log;
 
-  tb::Client client(io, ctx, "localhost:3000");
-  auto accounts = client.make_accounts<2>();
-  std::memset(&accounts, 0, client.accounts_size());
+  fmt::print(fmt::fg(fmt::color::green_yellow) | fmt::emphasis::bold,
+             "TigerBeetle C++ Sample\n");
+  log.println(level::TRACE, "Connecting...");
+  tb::tb_client_t client{};
+  tb::tb_packet_list_t packets_pool;
+  std::string address = "127.0.0.1:3000";
 
-  // ////////////////////////////////////////////////////////////
-  // // Submitting a batch of accounts:                        //
-  // ////////////////////////////////////////////////////////////
+  tb::TB_STATUS status = tb::tb_client_init(
+      &client,         // Output client.
+      &packets_pool,   // Output packet list.
+      0,               // Cluster ID.
+      address.c_str(), // Cluster addresses.
+      address.size(),  //
+      32, // MaxConcurrency, could be 1, since it's a single-threaded example.
+      0,  // No need for a global context.
+      &tb::on_completion // Completion callback.
+  );
+
+  if (status != tb::TB_STATUS_SUCCESS) {
+    log.println(level::ERROR,
+                fmt::format("Failed to initialize tb::tb_client (ret={})",
+                            fmt::underlying(status)));
+    return -1;
+  }
+
+  tb::CompletionContext ctx{};
+  tb::tb_packet_t *packet;
+  tb::tb_packet_list_t packet_list;
+
+  ////////////////////////////////////////////////////////////
+  // Submitting a batch of accounts:                        //
+  ////////////////////////////////////////////////////////////
+
+  tb::account<2> accounts;
+
+  // Zeroing the memory, so we don't have to initialize every field.
+  std::memset(accounts.data(), 0, accounts.size() * sizeof(tb::tb_account_t));
 
   accounts.at(0).id = 1;
   accounts.at(0).code = 2;
@@ -28,64 +57,185 @@ auto main() -> int {
   accounts.at(1).code = 2;
   accounts.at(1).ledger = 777;
 
-  client.account_init(accounts);
-  auto packet = client.get_packet();
-  auto packet_list = client.get_packet_list();
-  auto packets_pool = client.get_packets_pool();
-  auto ctx_ = client.get_context();
-
-  // ////////////////////////////////////////////////////////////
-  // // Submitting multiple batches of transfers:              //
-  // ////////////////////////////////////////////////////////////
-
-  client.transfers(accounts);
-
-  // ////////////////////////////////////////////////////////////
-  // // Looking up accounts:                                   //
-  // ////////////////////////////////////////////////////////////
-
-  fmt::println("Looking up accounts ...\n");
-  tb_uint128_t ids[accounts.size()] = {accounts[0].id, accounts[1].id};
-
   // Acquiring a packet for this request:
-  packet = client.acquire_packet(&packets_pool);
-  packet->operation = TB_OPERATION_LOOKUP_ACCOUNTS;
-  packet->data = ids;
-  packet->data_size = sizeof(tb_uint128_t) * accounts.size();
-  packet->user_data = &ctx;
-  packet->status = TB_PACKET_OK;
+  packet = tb::acquire_packet(packets_pool);
+  packet->operation =
+      tb::TB_OPERATION_CREATE_ACCOUNTS; // The operation to be performed.
+  packet->data = accounts.data();       // The data to be sent.
+  packet->data_size = accounts.size() * sizeof(tb::tb_account_t); //
+  packet->user_data = &ctx;          // User-defined context.
+  packet->status = tb::TB_PACKET_OK; // Will be set when the reply arrives.
 
-  packet_list->head = packet.get();
-  packet_list->tail = packet.get();
-  client.send_request(client.get_client(), packet_list, ctx_);
+  log.println(level::TRACE, "Creating accounts...");
 
-  if (packet->status != TB_PACKET_OK) {
+  packet_list.head = packet;
+  packet_list.tail = packet;
+  tb::send_request(client, &packet_list, &ctx);
+
+  if (packet->status != tb::TB_PACKET_OK) {
     // Checking if the request failed:
-    fmt::println("Error calling lookup_accounts (ret={})", packet->status);
-    exit(-1);
+    log.println(
+        level::ERROR,
+        fmt::format("Error calling create_accounts (ret={})", packet->status));
+    return -1;
   }
 
   // Releasing the packet, so it can be used in a next request.
-  client.release_packet(&packets_pool, packet.get());
+  tb::release_packet(packets_pool, packet);
 
-  if (ctx.size == 0) {
-    fmt::println("No accounts found");
-    exit(-1);
-  } else {
-    // Printing the account's balance:
-    tb_account_t *results =
-        reinterpret_cast<tb_account_t *>(ctx_->reply.data());
-    int results_len = ctx.size / sizeof(tb_account_t);
-    fmt::println("{} Account(s) found\n", results_len);
-    fmt::println("============================================\n");
-
+  if (ctx.size != 0) {
+    // Checking for errors creating the accounts:
+    tb::tb_create_accounts_result_t *results =
+        reinterpret_cast<tb::tb_create_accounts_result_t *>(ctx.reply.data());
+    int results_len = ctx.size / sizeof(tb::tb_create_accounts_result_t);
+    log.println(level::INFO, "create_account results:");
     for (int i = 0; i < results_len; i++) {
-      fmt::println("id={}\n", (long)results[i].id);
-      fmt::println("debits_posted={}\n", results[i].debits_posted);
-      fmt::println("credits_posted={}\n", results[i].credits_posted);
-      fmt::println("\n");
+      log.println(level::INFO, fmt::format("index={}, ret={}", results[i].index,
+                                           results[i].result));
+    }
+    return -1;
+  }
+
+  log.println(level::INFO, "Accounts created successfully");
+
+  ////////////////////////////////////////////////////////////
+  // Submitting multiple batches of transfers:              //
+  ////////////////////////////////////////////////////////////
+
+  log.println(level::TRACE, "Creating transfers...");
+
+  std::size_t max_latency_ms = 0;
+  std::size_t total_time_ms = 0;
+  for (std::size_t i = 0; i < MAX_BATCHES; i++) {
+    tb::transfer<TRANSFERS_PER_BATCH> transfers;
+
+    // Zeroing the memory, so we don't have to initialize every field.
+    std::memset(transfers.data(), 0, transfers.size());
+
+    for (size_t j = 0; j < TRANSFERS_PER_BATCH; j++) {
+      transfers.at(j).id = j + 1 + (i * TRANSFERS_PER_BATCH);
+      transfers.at(j).debit_account_id = accounts.at(0).id;
+      transfers.at(j).credit_account_id = accounts.at(1).id;
+      transfers.at(j).code = 2;
+      transfers.at(j).ledger = 777;
+      transfers.at(j).amount = 1;
+    }
+
+    // Acquiring a packet for this request:
+    packet = tb::acquire_packet(packets_pool);
+    packet->operation =
+        tb::TB_OPERATION_CREATE_TRANSFERS;    // The operation to be performed.
+    packet->data = transfers.data();          // The data to be sent.
+    packet->data_size = tb::MAX_MESSAGE_SIZE; //
+    packet->user_data = &ctx;                 // User-defined context.
+    packet->status = tb::TB_PACKET_OK; // Will be set when the reply arrives.
+
+    std::size_t now =
+        std::chrono::system_clock::now().time_since_epoch().count();
+
+    packet_list.head = packet;
+    packet_list.tail = packet;
+    tb::send_request(client, &packet_list, &ctx);
+
+    std::size_t elapsed_ms =
+        std::chrono::system_clock::now().time_since_epoch().count() - now;
+    if (elapsed_ms > max_latency_ms)
+      max_latency_ms = elapsed_ms;
+    total_time_ms += elapsed_ms;
+
+    if (packet->status != tb::TB_PACKET_OK) {
+      // Checking if the request failed:
+      log.println(level::ERROR,
+                  fmt::format("Error calling create_transfers (ret={})",
+                              packet->status));
+      return -1;
+    }
+
+    // Releasing the packet, so it can be used in a next request.
+    tb::release_packet(packets_pool, packet);
+
+    if (ctx.size != 0) {
+      // Checking for errors creating the accounts:
+      tb::tb_create_transfers_result_t *results =
+          reinterpret_cast<tb::tb_create_transfers_result_t *>(
+              ctx.reply.data());
+      int results_len = ctx.size / sizeof(tb::tb_create_transfers_result_t);
+      log.println(level::INFO, "create_transfers results:");
+      for (int i = 0; i < results_len; i++) {
+        log.println(level::INFO,
+                    fmt::format("index={}, ret={}", results[i].index,
+                                results[i].result));
+      }
+      return -1;
     }
   }
 
-  io.run();
+  log.println(level::INFO, "Transfers created successfully");
+  fmt::println("============================================");
+
+  log.println(
+      level::INFO,
+      fmt::format("{} transfers per second",
+                  (MAX_BATCHES * TRANSFERS_PER_BATCH * 1000) / total_time_ms));
+  log.println(
+      level::INFO,
+      fmt::format("create_transfers max p100 latency per {} transfers = {}ms",
+                  TRANSFERS_PER_BATCH, max_latency_ms));
+  log.println(level::INFO,
+              fmt::format("total {} transfers in {}ms",
+                          MAX_BATCHES * TRANSFERS_PER_BATCH, total_time_ms));
+
+  ////////////////////////////////////////////////////////////
+  // Looking up accounts:                                   //
+  ////////////////////////////////////////////////////////////
+
+  log.println(level::INFO, "Looking up accounts ...");
+  tb::accountID<2> ids = {accounts.at(0).id, accounts.at(1).id};
+
+  // Acquiring a packet for this request:
+  packet = tb::acquire_packet(packets_pool);
+  packet->operation = tb::TB_OPERATION_LOOKUP_ACCOUNTS;
+  packet->data = ids.data();
+  packet->data_size = sizeof(tb::tb_uint128_t) * accounts.size();
+  packet->user_data = &ctx;
+  packet->status = tb::TB_PACKET_OK;
+
+  packet_list.head = packet;
+  packet_list.tail = packet;
+  tb::send_request(client, &packet_list, &ctx);
+
+  if (packet->status != tb::TB_PACKET_OK) {
+    // Checking if the request failed:
+    log.println(
+        level::ERROR,
+        fmt::format("Error calling lookup_accounts (ret={})", packet->status));
+    return -1;
+  }
+
+  // Releasing the packet, so it can be used in a next request.
+  tb::release_packet(packets_pool, packet);
+
+  if (ctx.size == 0) {
+    log.println(level::WARN, "No accounts found!");
+    return -1;
+  } else {
+    // Printing the account's balance:
+    tb::tb_account_t *results =
+        reinterpret_cast<tb::tb_account_t *>(ctx.reply.data());
+    int results_len = ctx.size / sizeof(tb::tb_account_t);
+    log.println(level::INFO, fmt::format("{} Account(s) found", results_len));
+    fmt::println("============================================");
+
+    for (int i = 0; i < results_len; i++) {
+      log.println(level::INFO, fmt::format("id={}", static_cast<std::size_t>(
+                                                        results[i].id)));
+      log.println(level::INFO,
+                  fmt::format("debits_posted={}", results[i].debits_posted));
+      fmt::println("credits_posted={}", results[i].credits_posted);
+    }
+  }
+
+  // Cleanup:
+  tb::tb_client_deinit(client);
+  return 0;
 }

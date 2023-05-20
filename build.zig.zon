@@ -16,7 +16,7 @@
 
 .{
     .name = "tb-cpp",
-    .version = "1.0.0",
+    .version = "0.1.0",
     .license = "BSL-1.0",
     .dependencies = .{
         // TODO - await tb upgrade to Zig v0.11.0
@@ -27,10 +27,6 @@
         .fmt = .{
             .url = "https://github.com/kassane/fmt/archive/refs/tags/10.0.0.tar.gz",
             .hash = "122005f54f00ec7db704d42b5f00b471e304e039dfb1952903c0743cddaed1cb50b7",
-        },
-        .asio = .{
-            .url = "https://github.com/kassane/asio/archive/refs/tags/1.28.0.tar.gz",
-            .hash = "122088a3877c50fb7c4659506f733dcac17a945ddd20f1a640855314522f19d8186e",
         },
     },
 }

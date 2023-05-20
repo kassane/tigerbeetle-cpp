@@ -34,12 +34,6 @@ pub fn build(b: *std.Build) void {
 
     // Dependencies
 
-    // asio
-    const libasio_dep = b.dependency("asio", .{
-        .target = target,
-        .optimize = optimize,
-    });
-    const libasio = libasio_dep.artifact("asio");
     // fmt
     const libfmt_dep = b.dependency("fmt", .{
         .target = target,
@@ -52,15 +46,28 @@ pub fn build(b: *std.Build) void {
     //     .optimize = optimize,
     // });
     // const libtb = libtb_dep.artifact("tigerbeetle");
-
-    exe.linkLibrary(libasio);
+    exe.addIncludePath("build/_deps/tb-src/src/clients/c/lib/include");
+    const arch: []const u8 = switch (target.getCpuArch()) {
+        .aarch64 => "aarch64",
+        else => "x86_64",
+    };
+    const abi: []const u8 = switch (target.getAbi()) {
+        .gnu => "gnu",
+        else => "musl",
+    };
+    const os: []const u8 = switch (target.getOsTag()) {
+        .windows => "windows",
+        .macos => "macos",
+        else => b.fmt("linux-{s}", .{abi}),
+    };
+    exe.addLibraryPath(b.fmt("build/_deps/tb-src/src/clients/c/lib/{s}-{s}", .{ arch, os }));
+    exe.linkSystemLibraryName("tb_client");
+    if (target.isWindows())
+        exe.linkSystemLibrary("ws2_32");
     exe.linkLibrary(libfmt);
     // exe.linkLibrary(libtb);
     exe.linkLibCpp(); // static-linking llvm-libcxx/abi + linking OS-libc
-
-    exe.installLibraryHeaders(libasio); // get copy asio include
     exe.installLibraryHeaders(libfmt); // get copy fmt include
-
     b.installArtifact(exe); // get copy binaries from: zig-cache/ to zig-out/
 
     const run_cmd = b.addRunArtifact(exe);
