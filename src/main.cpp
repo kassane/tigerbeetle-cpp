@@ -100,7 +100,7 @@ auto main() -> int {
   // Submitting multiple batches of transfers:              //
   ////////////////////////////////////////////////////////////
 
-  log.warn("Creating transfers...");
+  log.trace("Creating transfers...");
 
   std::size_t max_latency_ms = 0;
   std::size_t total_time_ms = 0;
