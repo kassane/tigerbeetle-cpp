@@ -20,13 +20,12 @@ jobs:
       - uses: lukka/get-cmake@latest
         with:
           cmakeVersion: latest
-          ninjaVersion: latest
 
       - name: CMake - Preconfigure
         run: cmake -B build -DCMAKE_CXX_COMPILER=$PWD/scripts/zigcxx.sh
 
       - name: CMake - Build C++ client
-        run: cmake --build build --parallel
+        run: cmake --build build --target run_with_tb
 
       - name: Zig - Build C++ client
         run: zig build -fsummary -freference-trace
@@ -69,7 +68,7 @@ jobs:
         shell: msys2 {0}
         run: |
             cd /C/_
-            if [${{ matrix.config.arch }} == 'i686' ]; then
+            if [ ${{ matrix.config.arch }} == 'i686' ]; then
               zig build -fsummary -freference-trace -Dtarget=x86-windows
             else
               zig build -fsummary -freference-trace -Dtarget=${{ matrix.arch }}-windows

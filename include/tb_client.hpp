@@ -18,9 +18,8 @@ a source language processor.
 
 #pragma once
 #include <array>
-#include <chrono>
-#include <fmt/color.h>
 #include <fmt/core.h>
+#include <fmt/color.h>
 #include <memory>
 
 namespace tigerbeetle {
@@ -30,9 +29,7 @@ constexpr size_t MAX_MESSAGE_SIZE = (1024 * 1024) - 128;
 template <std::size_t N> using accountID = std::array<tb_uint128_t, N>;
 template <std::size_t N> using transferID = std::array<tb_uint128_t, N>;
 template <std::size_t N> using transfer = std::array<tb_transfer_t, N>;
-;
 template <std::size_t N> using account = std::array<tb_account_t, N>;
-;
 template <std::size_t N> auto make_account() { return account<N>{}; }
 template <std::size_t N> auto make_transfer() { return transfer<N>{}; }
 // Synchronization context between the callback and the main thread.
@@ -103,11 +100,21 @@ enum class LogLevel {
 
 class Logger {
 public:
-  static void println(LogLevel level, const std::string &message) {
-    fmt::color color = getLogLevelColor(level);
-    fmt::print(fg(color), "[{}] {}\n", getLogLevelString(level), message);
+  static void warn(const std::string &message){
+    println(LogLevel::WARN, message);
   }
-
+  static void trace(const std::string &message){
+     println(LogLevel::TRACE, message);
+  }
+  static void debug(const std::string &message){
+     println(LogLevel::DEBUG, message);
+  }
+  static void info(const std::string &message){
+     println(LogLevel::INFO, message);
+  }
+  static void error(const std::string &message){
+    println(LogLevel::ERROR, message);
+  }
 private:
   static fmt::color getLogLevelColor(LogLevel level) {
     switch (level) {
@@ -126,20 +133,25 @@ private:
         0x000000); // Default color if the level is unknown
   }
 
+  static void println(LogLevel level, const std::string &message) {
+    fmt::color color = getLogLevelColor(level);
+    fmt::print(fg(color), "[{}] {}\n", getLogLevelString(level), message);
+  }
+
   static std::string getLogLevelString(LogLevel level) {
     switch (level) {
     case LogLevel::INFO:
-      return "INFO";
+      return "info";
     case LogLevel::DEBUG:
-      return "DEBUG";
+      return "debug";
     case LogLevel::ERROR:
-      return "ERROR";
+      return "error";
     case LogLevel::WARN:
-      return "WARN";
+      return "warn";
     case LogLevel::TRACE:
-      return "TRACE";
+      return "trace";
     }
-    return "UNKNOWN"; // Default log level if unknown
+    return "unknown"; // Default log level if unknown
   }
 };
 
