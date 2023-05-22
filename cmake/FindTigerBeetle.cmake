@@ -19,8 +19,6 @@ set(TIGERBEETLE_ROOT_DIR ${CMAKE_CURRENT_BINARY_DIR}/_deps/tb-src)
 
 # Specify the directories for different platforms
 set(TIGERBEETLE_INCLUDE_DIR ${TIGERBEETLE_ROOT_DIR}/src/clients/c/lib/include)
-set(TIGERBEETLE_LIBRARY_DIR "")
-set(CMAKE_TIGERBEETLE_LIBS_INIT "")
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64")
@@ -114,11 +112,6 @@ if(RUN_TB_TEST)
     message(FATAL_ERROR "Failed to build and run test with Zig.")
     endif()
 endif()
-
-# Remove generated 0_0.tigerbeetle file
-# if(EXISTS ${TIGERBEETLE_ROOT_DIR}/0_0.tigerbeetle)
-    file(REMOVE ${TIGERBEETLE_ROOT_DIR}/0_0.tigerbeetle)
-# endif()
 
 # Create a custom target to run_with_tb
 add_custom_target(run_with_tb

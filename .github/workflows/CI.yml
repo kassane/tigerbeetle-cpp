@@ -62,7 +62,7 @@ jobs:
         run: |
             cd /C/_
             cmake -B build -DCMAKE_CXX_COMPILER=$PWD/scripts/zigcxx.cmd
-            cmake --build build --target run_with_tb
+            cmake --build build --parallel
 
       - name: Build Summary - ${{ matrix.arch }}
         shell: msys2 {0}
