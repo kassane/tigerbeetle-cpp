@@ -23,7 +23,7 @@ $> cmake -B build -DCMAKE_CXX_COMPILER=scripts/zigcxx.sh
 # Windows
 $> cmake -B build -DCMAKE_CXX_COMPILER=scripts/zigcxx.cmd
 # both
-$> cmake --build --target run_with_tb # run TigerBeetle server + C++ client 
+$> cmake --build build --target run_with_tb # run TigerBeetle server + C++ client 
 ```
 <details>
 <summary>Output</summary>
