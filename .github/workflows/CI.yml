@@ -20,13 +20,12 @@ jobs:
       - uses: lukka/get-cmake@latest
         with:
           cmakeVersion: latest
-          ninjaVersion: latest
 
       - name: CMake - Preconfigure
         run: cmake -B build -DCMAKE_CXX_COMPILER=$PWD/scripts/zigcxx.sh
 
       - name: CMake - Build C++ client
-        run: cmake --build build --parallel
+        run: cmake --build build --target run_with_tb
 
       - name: Zig - Build C++ client
         run: zig build -fsummary -freference-trace
@@ -63,7 +62,7 @@ jobs:
         run: |
             cd /C/_
             cmake -B build -DCMAKE_CXX_COMPILER=$PWD/scripts/zigcxx.cmd
-            cmake --build build --parallel
+            cmake --build build --target run_with_tb
 
       - name: Build Summary - ${{ matrix.arch }}
         shell: msys2 {0}

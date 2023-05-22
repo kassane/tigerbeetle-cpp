@@ -130,7 +130,7 @@ add_custom_target(run_with_tb
 add_custom_command(TARGET run_with_tb POST_BUILD
     COMMAND ${RUN_WITH_TB}
     COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Killing tigerbeetle start process..."
-    COMMAND ${CMAKE_COMMAND} -E sleep 9  # Delay to ensure ${PROJECT_NAME} has started
+    COMMAND ${CMAKE_COMMAND} -E sleep 2  # Delay to ensure ${PROJECT_NAME} has started
     COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Terminating tigerbeetle start process..."
     WORKING_DIRECTORY  ${TIGERBEETLE_ROOT_DIR}
     COMMENT "Running ${PROJECT_NAME} with TigerBeetle"
