@@ -69,7 +69,7 @@ jobs:
         shell: msys2 {0}
         run: |
             cd /C/_
-            if [${{ matrix.config.arch }} == 'i686' ]; then
+            if [ ${{ matrix.config.arch }} == 'i686' ]; then
               zig build -fsummary -freference-trace -Dtarget=x86-windows
             else
               zig build -fsummary -freference-trace -Dtarget=${{ matrix.arch }}-windows

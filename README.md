@@ -11,13 +11,12 @@
 - TigerBeetle C client library v0.13.9
 
 **Tools**
-- cmake v3.14 or higher (optional)
+- cmake v3.14 or higher
 - zig v0.9.1 (tigerbeetle compatible)
 
 
 ### TODO
 
-- [x] improvement `tb_client.hpp` impl
 - [ ] upgrade zig 0.9.1 (stage1) to zig 0.11.0 (stage3) - pkg manager (choose cmake or zig only)
 
 

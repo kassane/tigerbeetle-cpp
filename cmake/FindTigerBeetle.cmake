@@ -1,3 +1,7 @@
+# File: FindTigerBeetle.cmake
+# Created Date: 17 May 2023
+# Author: Matheus Catarino França (@kassane) (matheus-catarino@hotmail.com)
+
 include(CheckLibraryExists)
 if(CMAKE_C_COMPILER_LOADED)
     include (CheckIncludeFile)
@@ -63,11 +67,11 @@ if(RUN_INSTALL_ZIG)
             RESULT_VARIABLE INSTALL_ZIG_RESULT
             )
             if(NOT ${INSTALL_ZIG_RESULT} EQUAL 0)
-                message(FATAL_ERROR "Failed to run install_zig script.")
+                message(FATAL_ERROR "Failed to run zig install script.")
             endif()
         endif()
     else()
-        message(STATUS "Zig already downloaded. Skipping install_zig.")
+        message(STATUS "Zig already downloaded. Skipping zig install.")
     endif()
 endif()
 
@@ -77,16 +81,24 @@ else()
     set(ZIG_BUILD_TYPE "-Drelease-safe")
 endif()
 
+if(WIN32)
+  set(BUILD_TB ${TIGERBEETLE_ROOT_DIR}/scripts/build.bat)
+  set(RUN_WITH_TB ${CMAKE_SOURCE_DIR}/scripts/runner.bat)
+else()
+  set(BUILD_TB ${TIGERBEETLE_ROOT_DIR}/scripts/build.sh)
+  set(RUN_WITH_TB ${CMAKE_SOURCE_DIR}/scripts/runner.sh)
+endif()
+
 if(BUILD_TB_C_CLIENT)
     # Build c_client with Zig
-    message(STATUS "Build c_client with Zig")
+    message(STATUS "Build c_client libraries with Zig 0.9.1")
     execute_process(
-    COMMAND ${TIGERBEETLE_ROOT_DIR}/zig/zig build c_client ${ZIG_BUILD_TYPE}
+    COMMAND ${BUILD_TB} c_client ${ZIG_BUILD_TYPE}
     WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
     RESULT_VARIABLE BUILD_C_CLIENT_RESULT
     )
     if(NOT ${BUILD_C_CLIENT_RESULT} EQUAL 0)
-    message(FATAL_ERROR "Failed to build c_client with Zig.")
+    message(FATAL_ERROR "Failed to build c_client libraries with Zig 0.9.1")
     endif()
 endif()
 
@@ -94,7 +106,7 @@ if(RUN_TB_TEST)
     # Build and run test with Zig
     message(STATUS "Build and run TigerBeetle tests with Zig")
     execute_process(
-    COMMAND ${TIGERBEETLE_ROOT_DIR}/zig/zig build test ${ZIG_BUILD_TYPE}
+    COMMAND ${BUILD_TB} test ${ZIG_BUILD_TYPE}
     WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
     RESULT_VARIABLE BUILD_RUN_WITH_TB_RESULT
     )
@@ -104,7 +116,9 @@ if(RUN_TB_TEST)
 endif()
 
 # Remove generated 0_0.tigerbeetle file
-file(REMOVE ${TIGERBEETLE_ROOT_DIR}/0_0.tigerbeetle)
+# if(EXISTS ${TIGERBEETLE_ROOT_DIR}/0_0.tigerbeetle)
+    file(REMOVE ${TIGERBEETLE_ROOT_DIR}/0_0.tigerbeetle)
+# endif()
 
 # Create a custom target to run_with_tb
 add_custom_target(run_with_tb
@@ -112,79 +126,16 @@ add_custom_target(run_with_tb
    WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
 )
 
-if(WIN32)
-  set(START_TIGERBEETLE_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/scripts/start_tigerbeetle.cmd")
-else()
-  set(START_TIGERBEETLE_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/scripts/start_tigerbeetle.sh")
-endif()
-
-# Run tigerbeetle format command after building my_app
+# # Add a post-build event to kill the tigerbeetle start process after running ${PROJECT_NAME}
 add_custom_command(TARGET run_with_tb POST_BUILD
-COMMAND ${TIGERBEETLE_ROOT_DIR}/zig-out/bin/tigerbeetle format --cluster=0 --replica=0 --replica-count=1 0_0.tigerbeetle
-  WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
-  COMMENT "Running tigerbeetle format"
-)
-
-# Run tigerbeetle start command after building my_app
-add_custom_command(TARGET run_with_tb POST_BUILD
-  COMMAND ${START_TIGERBEETLE_SCRIPT} --addresses=0.0.0.0:3000 ${TIGERBEETLE_ROOT_DIR}/0_0.tigerbeetle
-  WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
-  COMMAND_ECHO STDOUT
-  COMMENT "Running tigerbeetle start"
-)
-
-# Add a post-build event to kill the tigerbeetle start process after running ${PROJECT_NAME}
-add_custom_command(TARGET run_with_tb POST_BUILD
-    COMMAND ${PROJECT_NAME}
+    COMMAND ${RUN_WITH_TB}
     COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Killing tigerbeetle start process..."
     COMMAND ${CMAKE_COMMAND} -E sleep 9  # Delay to ensure ${PROJECT_NAME} has started
     COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Terminating tigerbeetle start process..."
-    COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red "NOTE: This command may not work on all platforms. Adjust accordingly."
-    COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red "You may need to manually terminate the 'tigerbeetle start' process."
     WORKING_DIRECTORY  ${TIGERBEETLE_ROOT_DIR}
     COMMENT "Running ${PROJECT_NAME} with TigerBeetle"
 )
-
-if(RUN_TB_SERVER)
-    # Run tigerbeetle format command in the background
-    execute_process(
-        COMMAND ${TIGERBEETLE_ROOT_DIR}/zig-out/bin/tigerbeetle format --cluster=0 --replica=0 --replica-count=1 0_0.tigerbeetle
-        WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
-        RESULT_VARIABLE RUN_WITH_TB_FOMART_RESULT
-    )
-    if(NOT ${RUN_WITH_TB_FORMAT_RESULT} EQUAL 0)
-    message(FATAL_ERROR "Failed to run tigerbeetle format with Zig.")
-    endif()
-
-    # Run tigerbeetle start command in the background
-    execute_process(
-        COMMAND ${TIGERBEETLE_ROOT_DIR}/zig-out/bin/tigerbeetle start --addresses=0.0.0.0:3000 "${TIGERBEETLE_ROOT_DIR}/0_0.tigerbeetle"
-        WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
-        RESULT_VARIABLE RUN_TIGERBEETLE_START_PID_RESULT
-        OUTPUT_VARIABLE TIGERBEETLE_START_PID
-    )
-    if(NOT ${RUN_TIGERBEETLE_START_PID_RESULT} EQUAL 0)
-    message(FATAL_ERROR "Failed to run tigerbeetle server with Zig.")
-    endif()
-
-    # Kill the tigerbeetle start process if needed
-    if(TIGERBEETLE_START_PID)
-        if(WIN32)
-            execute_process(
-            COMMAND taskkill /F /PID ${TIGERBEETLE_START_PID}
-            )
-        else()
-            execute_process(
-            COMMAND kill ${TIGERBEETLE_START_PID}
-            )
-        endif()
-    endif()
-endif()
   
-if(NOT ${CLEAN_ZIG_CACHE_RESULT} EQUAL 0)
-    message(FATAL_ERROR "Failed to clean zig directory.")
-endif()
-
 # Clean the zig-cache directory
 execute_process(
     COMMAND ${CMAKE_COMMAND} -E remove_directory ${TIGERBEETLE_ROOT_DIR}/zig-cache
@@ -194,9 +145,3 @@ execute_process(
 if(NOT ${CLEAN_ZIG_CACHE_RESULT} EQUAL 0)
     message(FATAL_ERROR "Failed to clean zig-cache directory.")
 endif()
-
-# Return to the project root directory
-execute_process(
-  COMMAND cd ../../../
-  WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
-)
