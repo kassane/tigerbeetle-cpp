@@ -77,12 +77,12 @@ Terminating tigerbeetle start process...
 | language | binding | description |
 | --- | --- | --- |
 | **C** | [client-c] | Official |
-| **Elixir** | [client-elixir] | Unofficial |
+| **Elixir** | [tigerbeetlex] | Unofficial |
 | **Go** | [client-go] | Official |
 | **Java** | [client-java] | Official |
 | **.Net** | [client-dotnet] | Official |
 | **Node** | [client-node] | Official |
-| **Rust** | [client-rust] | Unofficial |
+| **Rust** | [tigerbeetle-rs] | Unofficial |
 
 ## License
 
@@ -94,5 +94,5 @@ See: [LICENSE](LICENSE)
 [client-node]: https://github.com/tigerbeetledb/tigerbeetle/tree/main/src/clients/node
 [client-java]: https://github.com/tigerbeetledb/tigerbeetle/tree/main/src/clients/java
 [client-dotnet]: https://github.com/tigerbeetledb/tigerbeetle/tree/main/src/clients/dotnet
-[client-elixir]: https://github.com/rbino/tigerbeetlex
-[client-rust]: https://github.com/ZetaNumbers/tigerbeetle-rs
+[tigerbeetlex]: https://github.com/rbino/tigerbeetlex
+[tigerbeetle-rs]: https://github.com/ZetaNumbers/tigerbeetle-rs
