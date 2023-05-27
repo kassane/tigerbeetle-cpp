@@ -81,7 +81,7 @@ endif()
 
 if(WIN32)
   set(BUILD_TB ${TIGERBEETLE_ROOT_DIR}/scripts/build.bat)
-  set(RUN_WITH_TB ${CMAKE_SOURCE_DIR}/scripts/runner.ps1)
+  set(RUN_WITH_TB ${CMAKE_SOURCE_DIR}/scripts/runner.bat)
 else()
   set(BUILD_TB ${TIGERBEETLE_ROOT_DIR}/scripts/build.sh)
   set(RUN_WITH_TB ${CMAKE_SOURCE_DIR}/scripts/runner.sh)
