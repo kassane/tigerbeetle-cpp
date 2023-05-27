@@ -15,12 +15,10 @@ auto main() -> int {
 
   log.trace("Connecting...");
   tb::tb_client_t client{};
-  tb::tb_packet_list_t packets_pool;
   std::string address = "127.0.0.1:3001";
 
   tb::TB_STATUS status = tb::tb_client_init(
       &client,         // Output client.
-      &packets_pool,   // Output packet list.
       0,               // Cluster ID.
       address.c_str(), // Cluster addresses.
       address.size(),  //
@@ -36,8 +34,7 @@ auto main() -> int {
   }
 
   tb::CompletionContext ctx{};
-  tb::tb_packet_t *packet;
-  tb::tb_packet_list_t packet_list;
+  tb::tb_packet_t *packet = nullptr;
 
   ////////////////////////////////////////////////////////////
   // Submitting a batch of accounts:                        //
@@ -57,7 +54,11 @@ auto main() -> int {
   accounts.at(1).ledger = 777;
 
   // Acquiring a packet for this request:
-  packet = tb::acquire_packet(packets_pool);
+  if (tb_client_acquire_packet(client, &packet) != tb::TB_PACKET_ACQUIRE_OK) {
+      log.error("Too many concurrent packets.");
+      return -1;
+  }
+
   packet->operation =
       tb::TB_OPERATION_CREATE_ACCOUNTS; // The operation to be performed.
   packet->data = accounts.data();       // The data to be sent.
@@ -67,9 +68,8 @@ auto main() -> int {
 
   log.trace("Creating accounts...");
 
-  packet_list.head = packet;
-  packet_list.tail = packet;
-  tb::send_request(client, &packet_list, &ctx);
+ 
+  tb::send_request(client, packet, &ctx);
 
   if (packet->status != tb::TB_PACKET_OK) {
     // Checking if the request failed:
@@ -79,7 +79,7 @@ auto main() -> int {
   }
 
   // Releasing the packet, so it can be used in a next request.
-  tb::release_packet(packets_pool, packet);
+  tb::tb_client_release_packet(client, packet);
 
   if (ctx.size != 0) {
     // Checking for errors creating the accounts:
@@ -119,8 +119,12 @@ auto main() -> int {
       transfers.at(j).amount = 1;
     }
 
-    // Acquiring a packet for this request:
-    packet = tb::acquire_packet(packets_pool);
+  // Acquiring a packet for this request:
+  if (tb_client_acquire_packet(client, &packet) != tb::TB_PACKET_ACQUIRE_OK) {
+      log.error("Too many concurrent packets.");
+      return -1;
+  }
+
     packet->operation =
         tb::TB_OPERATION_CREATE_TRANSFERS;    // The operation to be performed.
     packet->data = transfers.data();          // The data to be sent.
@@ -131,9 +135,7 @@ auto main() -> int {
     std::size_t now =
         std::chrono::system_clock::now().time_since_epoch().count();
 
-    packet_list.head = packet;
-    packet_list.tail = packet;
-    tb::send_request(client, &packet_list, &ctx);
+    tb::send_request(client, packet, &ctx);
 
     std::size_t elapsed_ms =
         std::chrono::system_clock::now().time_since_epoch().count() - now;
@@ -150,7 +152,7 @@ auto main() -> int {
     }
 
     // Releasing the packet, so it can be used in a next request.
-    tb::release_packet(packets_pool, packet);
+    tb::tb_client_release_packet(client, packet);
 
     if (ctx.size != 0) {
       // Checking for errors creating the accounts:
@@ -187,16 +189,18 @@ auto main() -> int {
   tb::accountID<2> ids = {accounts.at(0).id, accounts.at(1).id};
 
   // Acquiring a packet for this request:
-  packet = tb::acquire_packet(packets_pool);
+  if (tb_client_acquire_packet(client, &packet) != tb::TB_PACKET_ACQUIRE_OK) {
+      log.error("Too many concurrent packets.");
+      return -1;
+  }
+  
   packet->operation = tb::TB_OPERATION_LOOKUP_ACCOUNTS;
   packet->data = ids.data();
   packet->data_size = sizeof(tb::tb_uint128_t) * accounts.size();
   packet->user_data = &ctx;
   packet->status = tb::TB_PACKET_OK;
 
-  packet_list.head = packet;
-  packet_list.tail = packet;
-  tb::send_request(client, &packet_list, &ctx);
+  tb::send_request(client, packet, &ctx);
 
   if (packet->status != tb::TB_PACKET_OK) {
     // Checking if the request failed:
@@ -206,7 +210,7 @@ auto main() -> int {
   }
 
   // Releasing the packet, so it can be used in a next request.
-  tb::release_packet(packets_pool, packet);
+  tb::tb_client_release_packet(client, packet);
 
   if (ctx.size == 0) {
     log.warn("No accounts found!");

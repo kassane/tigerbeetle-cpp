@@ -8,7 +8,7 @@
 
 **Libraries**
 - fmtlib v10.0.0
-- TigerBeetle C client library v0.13.9
+- TigerBeetle C client library v0.13.12
 
 **Tools**
 - cmake v3.14 or higher
@@ -71,8 +71,28 @@ Terminating tigerbeetle start process...
 - [ ] upgrade zig 0.9.1 (stage1) to zig 0.11.0 (stage3) - pkg manager (choose cmake or zig only)
 
 
+## References
+
+
+| language | binding | description |
+| --- | --- | --- |
+| **C** | [client-c] | Official |
+| **Elixir** | [tigerbeetlex] | Unofficial |
+| **Go** | [client-go] | Official |
+| **Java** | [client-java] | Official |
+| **.Net** | [client-dotnet] | Official |
+| **Node** | [client-node] | Official |
+| **Rust** | [tigerbeetle-rs] | Unofficial |
+
 ## License
 
 See: [LICENSE](LICENSE)
 
 [TigerBeetle]: https://github.com/tigerbeetledb/tigerbeetle
+[client-c]:https://github.com/tigerbeetledb/tigerbeetle/tree/main/src/clients/c
+[client-go]: https://github.com/tigerbeetledb/tigerbeetle/tree/main/src/clients/go
+[client-node]: https://github.com/tigerbeetledb/tigerbeetle/tree/main/src/clients/node
+[client-java]: https://github.com/tigerbeetledb/tigerbeetle/tree/main/src/clients/java
+[client-dotnet]: https://github.com/tigerbeetledb/tigerbeetle/tree/main/src/clients/dotnet
+[tigerbeetlex]: https://github.com/rbino/tigerbeetlex
+[tigerbeetle-rs]: https://github.com/ZetaNumbers/tigerbeetle-rs

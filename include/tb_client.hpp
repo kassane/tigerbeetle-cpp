@@ -39,37 +39,6 @@ struct CompletionContext {
   bool completed;
 };
 
-inline tb_packet_t *acquire_packet(tb_packet_list_t &packet_list) {
-  // This sample is single-threaded,
-  // In real use, this function should be thread-safe.
-  tb_packet_t *packet = packet_list.head;
-
-  if (packet == nullptr) {
-    fmt::print("Too many concurrent requests\n");
-    std::exit(-1);
-  }
-
-  packet_list.head = packet->next;
-  packet->next = nullptr;
-
-  if (packet_list.head == nullptr) {
-    packet_list.tail = nullptr;
-  }
-
-  return packet;
-}
-
-inline void release_packet(tb_packet_list_t &packet_list, tb_packet_t *packet) {
-  // This sample is single-threaded,
-  // In real use, this function should be thread-safe.
-  if (packet_list.head == nullptr) {
-    packet_list.head = packet;
-    packet_list.tail = packet;
-  } else {
-    packet_list.tail->next = packet;
-    packet_list.tail = packet;
-  }
-}
 inline void on_completion([[maybe_unused]] uintptr_t context,
                           [[maybe_unused]] tb_client_t client,
                           tb_packet_t *packet, const uint8_t *data,
@@ -80,11 +49,11 @@ inline void on_completion([[maybe_unused]] uintptr_t context,
   ctx->completed = true;
 }
 
-inline void send_request(tb_client_t client, tb_packet_list_t *packets,
+inline void send_request(tb_client_t client, tb_packet_t *packet,
                          CompletionContext *ctx) {
   // Submits the request asynchronously:
   ctx->completed = false;
-  tb_client_submit(client, packets);
+  tb_client_submit(client, packet);
   while (!ctx->completed) {
     // Wait for completion
   }
