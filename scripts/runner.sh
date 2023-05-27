@@ -28,7 +28,7 @@ fi
 
 ./zig-out/bin/tigerbeetle format --cluster=0 --replica=0 --replica-count=1  "$FILE" > running.log 2>&1
 echo "Starting replica 0"
-./zig-out/bin/tigerbeetle start --addresses=0.0.0.0:3001  "$FILE" > running.log 2>&1 &
+./zig-out/bin/tigerbeetle start --addresses=3001  "$FILE" > running.log 2>&1 &
 
 echo ""
 echo "running client..."

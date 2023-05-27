@@ -1,38 +1,40 @@
 @echo off
 setlocal enabledelayedexpansion
 
-if "%~1" equ ":main" (
-    shift /1
-    goto main
-)
+REM Define colors for console output
+set COLOR_RED=^[[1;31m
+set COLOR_END=^[[0m
 
-cmd /d /c "%~f0" :main %*
-set ZIG_RESULT=%ERRORLEVEL%
-taskkill /F /IM zig-out\bin\tigerbeetle.exe >nul
-
-if !ZIG_RESULT! equ 0 (
-    del /f client.log
+REM Function to handle errors and cleanup
+:onerror
+if "!ERRORLEVEL!"=="0" (
+    del running.log
+    echo Done!!
 ) else (
-    echo.
-    echo Error running client
-    type client.log
+    echo %COLOR_RED%
+    echo Error running with tigerbeetle
+    echo %COLOR_END%
+    type running.log
 )
 
-echo.
-exit /b
+taskkill /f /im tigerbeetle.exe > nul 2>&1
 
-:main
+REM Be careful to use a running-specific filename so that we don't erase a real data file
+set "FILE=%CD%\0_0.tigerbeetle"
+if exist "%FILE%" (
+    del "%FILE%"
+)
 
-echo Initializing replica 0
-set ZIG_FILE=0_0.tigerbeetle
-if exist "!ZIG_FILE!" DEL /F "!ZIG_FILE!"
-    zig-out\bin\tigerbeetle.exe format --cluster=0 --replica=0 --replica-count=1 !ZIG_FILE! > client.log 2>&1 || exit /b
-
-
+zig-out\bin\tigerbeetle.exe format --cluster=0 --replica=0 --replica-count=1 "%FILE%" > running.log 2>&1
 echo Starting replica 0
-start /B "tigerbeetle_0" zig-out\bin\tigerbeetle.exe start --addresses=3001 !ZIG_FILE! > client.log 2>&1
+start /B zig-out\bin\tigerbeetle.exe start --addresses=3001 "%FILE%" > running.log 2>&1
 
 echo.
-echo client running...
+echo running client...
 ..\..\tb_cpp.exe
-exit /b %errorlevel%
+
+echo.
+
+if exist "%FILE%" (
+    del "%FILE%"
+)
