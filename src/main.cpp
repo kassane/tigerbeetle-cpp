@@ -15,7 +15,6 @@ auto main() -> int {
              "TigerBeetle C++ Sample\n\n");
 
   log.trace("Connecting...");
-  // tb::tb_client_t client{};
   std::string address = "127.0.0.1:3001";
 
   tb::Client client(
