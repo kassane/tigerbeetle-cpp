@@ -47,8 +47,7 @@ auto main() -> int {
   accounts.at(1).ledger = 777;
 
   // Acquiring a packet for this request:
-  if (client.acquire_packet(packet) !=
-      tb::TB_PACKET_ACQUIRE_OK) {
+  if (client.acquire_packet(&packet) != tb::TB_PACKET_ACQUIRE_OK) {
     log.error("Too many concurrent packets.");
     return -1;
   }
@@ -72,7 +71,7 @@ auto main() -> int {
   }
 
   // Releasing the packet, so it can be used in a next request.
-  client.release_packet(packet);
+  client.release_packet(&packet);
 
   if (ctx.size != 0) {
     // Checking for errors creating the accounts:
@@ -120,8 +119,7 @@ auto main() -> int {
 
     // Acquiring a packet for this request:
     tb::tb_packet_t *packet = nullptr;
-    if (client.acquire_packet(packet) !=
-        tb::TB_PACKET_ACQUIRE_OK) {
+    if (client.acquire_packet(&packet) != tb::TB_PACKET_ACQUIRE_OK) {
       log.error("Too many concurrent packets.");
       return -1;
     }
@@ -153,7 +151,7 @@ auto main() -> int {
     }
 
     // Releasing the packet, so it can be used in the next request.
-    client.release_packet(packet);
+    client.release_packet(&packet);
 
     if (ctx.size != 0) {
       // Checking for errors creating the accounts:
@@ -190,8 +188,7 @@ auto main() -> int {
   tb::accountID<2> ids = {accounts.at(0).id, accounts.at(1).id};
 
   // Acquiring a packet for this request:
-  if (client.acquire_packet(packet) !=
-      tb::TB_PACKET_ACQUIRE_OK) {
+  if (client.acquire_packet(&packet) != tb::TB_PACKET_ACQUIRE_OK) {
     log.error("Too many concurrent packets.");
     return -1;
   }
@@ -212,7 +209,7 @@ auto main() -> int {
   }
 
   // Releasing the packet, so it can be used in a next request.
-  client.release_packet(packet);
+  client.release_packet(&packet);
 
   if (ctx.size == 0) {
     log.warn("No accounts found!");

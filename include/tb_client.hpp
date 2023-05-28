@@ -73,11 +73,11 @@ public:
   ~Client() { destroy(); }
 
   tb_client_t get() const { return client; }
-  TB_PACKET_ACQUIRE_STATUS acquire_packet(tb_packet_t *packet) {
-    return tb_client_acquire_packet(client, &packet);
+  TB_PACKET_ACQUIRE_STATUS acquire_packet(tb_packet_t **packet) const {
+    return tb_client_acquire_packet(client, packet);
   }
-  void release_packet(tb_packet_t *packet) {
-    tb_client_release_packet(client, packet);
+  void release_packet(tb_packet_t **packet) {
+    tb_client_release_packet(client, *packet);
   }
   void send_request(tb_packet_t *packet, CompletionContext *ctx) {
     // Submits the request asynchronously:
