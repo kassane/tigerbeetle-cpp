@@ -6,7 +6,8 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(RUN_INSTALL_ZIG "Run zig install 0.9.1" ON)
-option(BUILD_TB_C_CLIENT "Build c_client libraries with Zig" ON)
+option(BUILD_TB_C_CLIENT "Build c_client library with Zig" ON)
+option(TIGERBEETLE_BUILD_SHARED_LIBS "Build TigerBeetle as a shared library" ON)
 option(RUN_TB_TEST "Run Tigerbeetle test" OFF)
 
 include(cmake/deps.cmake)

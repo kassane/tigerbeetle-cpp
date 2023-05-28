@@ -54,7 +54,7 @@ auto main() -> int {
   accounts.at(1).ledger = 777;
 
   // Acquiring a packet for this request:
-  if (tb_client_acquire_packet(client, &packet) != tb::TB_PACKET_ACQUIRE_OK) {
+  if (tb::tb_client_acquire_packet(client, &packet) != tb::TB_PACKET_ACQUIRE_OK) {
       log.error("Too many concurrent packets.");
       return -1;
   }
@@ -120,7 +120,7 @@ auto main() -> int {
     }
 
   // Acquiring a packet for this request:
-  if (tb_client_acquire_packet(client, &packet) != tb::TB_PACKET_ACQUIRE_OK) {
+  if (tb::tb_client_acquire_packet(client, &packet) != tb::TB_PACKET_ACQUIRE_OK) {
       log.error("Too many concurrent packets.");
       return -1;
   }
@@ -189,7 +189,7 @@ auto main() -> int {
   tb::accountID<2> ids = {accounts.at(0).id, accounts.at(1).id};
 
   // Acquiring a packet for this request:
-  if (tb_client_acquire_packet(client, &packet) != tb::TB_PACKET_ACQUIRE_OK) {
+  if (tb::tb_client_acquire_packet(client, &packet) != tb::TB_PACKET_ACQUIRE_OK) {
       log.error("Too many concurrent packets.");
       return -1;
   }
