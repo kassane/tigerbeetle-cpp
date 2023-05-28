@@ -46,9 +46,11 @@ if(RUN_INSTALL_ZIG)
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(ZIG_BUILD_TYPE "-Dconfig=default")
+    set(ZIG_BUILD_TYPE "-Drelease-safe=false")
+    set(ZIG_CONFIG "-Dconfig=default")
 else()
-    set(ZIG_BUILD_TYPE "-Drelease-safe -Dconfig=production")
+    set(ZIG_BUILD_TYPE "-Drelease-safe")
+    set(ZIG_CONFIG "-Dconfig=production")
 endif()
 
 if(WIN32)
@@ -63,7 +65,7 @@ if(BUILD_TB_C_CLIENT)
     # Build c_client with Zig
     message(STATUS "Build c_client libraries with Zig 0.9.1")
     execute_process(
-    COMMAND ${BUILD_TB} c_client ${ZIG_BUILD_TYPE}
+    COMMAND ${BUILD_TB} c_client ${ZIG_BUILD_TYPE} ${ZIG_CONFIG}
     WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
     RESULT_VARIABLE BUILD_C_CLIENT_RESULT
     )
