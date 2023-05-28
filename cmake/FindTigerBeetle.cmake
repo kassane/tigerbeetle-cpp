@@ -20,6 +20,58 @@ set(TIGERBEETLE_ROOT_DIR ${CMAKE_CURRENT_BINARY_DIR}/_deps/tb-src)
 # Specify the directories for different platforms
 set(TIGERBEETLE_INCLUDE_DIR ${TIGERBEETLE_ROOT_DIR}/src/clients/c/lib/include)
 
+if(RUN_INSTALL_ZIG)
+    if(NOT EXISTS "${TIGERBEETLE_ROOT_DIR}/zig/zig")
+        if(WIN32)
+            # Run install_zig.bat script
+            execute_process(
+            COMMAND cmd /c ${TIGERBEETLE_ROOT_DIR}/scripts/install_zig.bat
+            WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
+            RESULT_VARIABLE INSTALL_ZIG_RESULT
+            )
+        else()
+            # Run install_zig.sh script
+            execute_process(
+            COMMAND sh ${TIGERBEETLE_ROOT_DIR}/scripts/install_zig.sh
+            WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
+            RESULT_VARIABLE INSTALL_ZIG_RESULT
+            )
+            if(NOT ${INSTALL_ZIG_RESULT} EQUAL 0)
+                message(FATAL_ERROR "Failed to run zig install script.")
+            endif()
+        endif()
+    else()
+        message(STATUS "Zig already downloaded. Skipping zig install.")
+    endif()
+endif()
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(ZIG_BUILD_TYPE "-Dconfig=default")
+else()
+    set(ZIG_BUILD_TYPE "-Drelease-safe -Dconfig=production")
+endif()
+
+if(WIN32)
+  set(BUILD_TB ${TIGERBEETLE_ROOT_DIR}/scripts/build.bat)
+  set(RUN_WITH_TB ${CMAKE_SOURCE_DIR}/scripts/runner.bat)
+else()
+  set(BUILD_TB ${TIGERBEETLE_ROOT_DIR}/scripts/build.sh)
+  set(RUN_WITH_TB ${CMAKE_SOURCE_DIR}/scripts/runner.sh)
+endif()
+
+if(BUILD_TB_C_CLIENT)
+    # Build c_client with Zig
+    message(STATUS "Build c_client libraries with Zig 0.9.1")
+    execute_process(
+    COMMAND ${BUILD_TB} c_client ${ZIG_BUILD_TYPE}
+    WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
+    RESULT_VARIABLE BUILD_C_CLIENT_RESULT
+    )
+    if(NOT ${BUILD_C_CLIENT_RESULT} EQUAL 0)
+    message(FATAL_ERROR "Failed to build c_client libraries with Zig 0.9.1")
+    endif()
+endif()
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64")
         set(TIGERBEETLE_LIBRARY_DIR ${TIGERBEETLE_ROOT_DIR}/src/clients/c/lib/aarch64-linux-gnu)
@@ -61,62 +113,12 @@ find_library(TigerBeetle NAMES ${CMAKE_TIGERBEETLE_LIBS_INIT}${CMAKE_TIGERBEETLE
 
 if (TIGERBEETLE_BUILD_SHARED_LIBS)
     add_library(TigerBeetle SHARED IMPORTED)
+    file(COPY ${TIGERBEETLE_LIBRARY_DIR}/${CMAKE_TIGERBEETLE_LIBS_INIT}${CMAKE_TIGERBEETLE_LIBS_SUFFIX}
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 else()
     add_library(TigerBeetle STATIC IMPORTED)
 endif()
 set_target_properties(TigerBeetle PROPERTIES IMPORTED_LOCATION ${TIGERBEETLE_LIBRARY_DIR}/${CMAKE_TIGERBEETLE_LIBS_INIT}${CMAKE_TIGERBEETLE_LIBS_SUFFIX})
-
-if(RUN_INSTALL_ZIG)
-    if(NOT EXISTS "${TIGERBEETLE_ROOT_DIR}/zig/zig")
-        if(WIN32)
-            # Run install_zig.bat script
-            execute_process(
-            COMMAND cmd /c ${TIGERBEETLE_ROOT_DIR}/scripts/install_zig.bat
-            WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
-            RESULT_VARIABLE INSTALL_ZIG_RESULT
-            )
-        else()
-            # Run install_zig.sh script
-            execute_process(
-            COMMAND sh ${TIGERBEETLE_ROOT_DIR}/scripts/install_zig.sh
-            WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
-            RESULT_VARIABLE INSTALL_ZIG_RESULT
-            )
-            if(NOT ${INSTALL_ZIG_RESULT} EQUAL 0)
-                message(FATAL_ERROR "Failed to run zig install script.")
-            endif()
-        endif()
-    else()
-        message(STATUS "Zig already downloaded. Skipping zig install.")
-    endif()
-endif()
-
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(ZIG_BUILD_TYPE "-Drelease-safe=false")
-else()
-    set(ZIG_BUILD_TYPE "-Drelease-safe")
-endif()
-
-if(WIN32)
-  set(BUILD_TB ${TIGERBEETLE_ROOT_DIR}/scripts/build.bat)
-  set(RUN_WITH_TB ${CMAKE_SOURCE_DIR}/scripts/runner.bat)
-else()
-  set(BUILD_TB ${TIGERBEETLE_ROOT_DIR}/scripts/build.sh)
-  set(RUN_WITH_TB ${CMAKE_SOURCE_DIR}/scripts/runner.sh)
-endif()
-
-if(BUILD_TB_C_CLIENT)
-    # Build c_client with Zig
-    message(STATUS "Build c_client libraries with Zig 0.9.1")
-    execute_process(
-    COMMAND ${BUILD_TB} c_client ${ZIG_BUILD_TYPE}
-    WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
-    RESULT_VARIABLE BUILD_C_CLIENT_RESULT
-    )
-    if(NOT ${BUILD_C_CLIENT_RESULT} EQUAL 0)
-    message(FATAL_ERROR "Failed to build c_client libraries with Zig 0.9.1")
-    endif()
-endif()
 
 if(RUN_TB_TEST)
     # Build and run test with Zig

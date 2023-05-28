@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <chrono>
+#include <cstddef>
 #include <tb_client.hpp>
 
 namespace tb = tigerbeetle;
@@ -117,7 +118,6 @@ auto main() -> int {
                    });
 
     // Acquiring a packet for this request:
-    tb::tb_packet_t *packet = nullptr;
     if (client.acquire_packet(&packet) != tb::TB_PACKET_ACQUIRE_OK) {
       log.error("Too many concurrent packets.");
       return -1;
@@ -157,12 +157,18 @@ auto main() -> int {
       tb::tb_create_transfers_result_t *results =
           reinterpret_cast<tb::tb_create_transfers_result_t *>(
               ctx.reply.data());
-      int results_len = ctx.size / sizeof(tb::tb_create_transfers_result_t);
+      std::size_t results_len =
+          ctx.size / sizeof(tb::tb_create_transfers_result_t);
       log.info("create_transfers results:");
-      for (int i = 0; i < results_len; i++) {
-        log.info(fmt::format("index={}, ret={}", results[i].index,
-                             results[i].result));
-      }
+
+      std::size_t i2 = 0;
+      std::for_each(results, results + results_len,
+                    [&](const tb::tb_create_transfers_result_t &result) {
+                      log.info(fmt::format("index={}, ret={}", result.index,
+                                           result.result));
+                      i2++;
+                    });
+
       return -1;
     }
   }
@@ -221,11 +227,12 @@ auto main() -> int {
   log.info(fmt::format("{} Account(s) found", results_len));
   fmt::println("============================================");
 
-  for (int i = 0; i < results_len; i++) {
-    log.trace(fmt::format("id={}", static_cast<std::size_t>(results[i].id)));
-    log.trace(fmt::format("debits_posted={}", results[i].debits_posted));
-    log.trace(fmt::format("credits_posted={}", results[i].credits_posted));
-  }
+  std::for_each(
+      results, results + results_len, [&](const tb::tb_account_t &result) {
+        log.trace(fmt::format("id={}", static_cast<std::size_t>(result.id)));
+        log.trace(fmt::format("debits_posted={}", result.debits_posted));
+        log.trace(fmt::format("credits_posted={}", result.credits_posted));
+      });
 
   return 0;
 }

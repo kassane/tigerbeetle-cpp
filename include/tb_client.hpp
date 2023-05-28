@@ -1,4 +1,7 @@
 /*
+
+Copyright (c) 2023 Matheus Catarino França (matheus-catarino@hotmail.com)
+
 Boost Software License - Version 1.0 - August 17th, 2003
 
 Permission is hereby granted, free of charge, to any person or organization
@@ -21,6 +24,7 @@ a source language processor.
 #include <fmt/color.h>
 #include <fmt/core.h>
 #include <memory>
+#include <mutex>
 #include <stdexcept>
 
 namespace tigerbeetle {
@@ -38,6 +42,7 @@ struct CompletionContext {
   std::array<uint8_t, MAX_MESSAGE_SIZE> reply;
   int size;
   bool completed;
+  std::mutex mutex;
 };
 
 class Client {
@@ -82,9 +87,16 @@ public:
   void send_request(tb_packet_t *packet, CompletionContext *ctx) {
     // Submits the request asynchronously:
     ctx->completed = false;
-    tb_client_submit(client, packet);
-    while (!ctx->completed) {
-      // Wait for completion
+    {
+      std::lock_guard<std::mutex> lock(ctx->mutex);
+      tb_client_submit(client, packet);
+    }
+    while (true) {
+      std::lock_guard<std::mutex> lock(ctx->mutex);
+      if (ctx->completed) {
+        break;
+      }
+      // Release the lock and wait for completion
     }
   }
 
@@ -103,9 +115,13 @@ inline void on_completion([[maybe_unused]] uintptr_t context,
                           tb_packet_t *packet, const uint8_t *data,
                           uint32_t size) {
   auto ctx = static_cast<CompletionContext *>(packet->user_data);
-  std::copy(data, data + size, ctx->reply.begin());
-  ctx->size = size;
-  ctx->completed = true;
+  {
+    std::lock_guard<std::mutex> lock(
+        ctx->mutex); // Lock the mutex before accessing ctx members
+    std::copy(data, data + size, ctx->reply.begin());
+    ctx->size = size;
+    ctx->completed = true;
+  }
 }
 
 enum class LogLevel {
