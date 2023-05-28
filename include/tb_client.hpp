@@ -20,7 +20,6 @@ a source language processor.
 #include <array>
 #include <fmt/color.h>
 #include <fmt/core.h>
-#include <functional>
 #include <memory>
 #include <stdexcept>
 
@@ -74,16 +73,20 @@ public:
   ~Client() { destroy(); }
 
   tb_client_t get() const { return client; }
-
-  void send_request(tb_packet_t *packet,
-                         CompletionContext *ctx) {
-  // Submits the request asynchronously:
-  ctx->completed = false;
-  tb_client_submit(client, packet);
-  while (!ctx->completed) {
-    // Wait for completion
+  TB_PACKET_ACQUIRE_STATUS acquire_packet(tb_packet_t *packet) {
+    return tb_client_acquire_packet(client, &packet);
   }
-}
+  void release_packet(tb_packet_t *packet) {
+    tb_client_release_packet(client, packet);
+  }
+  void send_request(tb_packet_t *packet, CompletionContext *ctx) {
+    // Submits the request asynchronously:
+    ctx->completed = false;
+    tb_client_submit(client, packet);
+    while (!ctx->completed) {
+      // Wait for completion
+    }
+  }
 
 private:
   void destroy() {
@@ -93,8 +96,6 @@ private:
     }
   }
   tb_client_t client;
-  using CompletionCallback = std::function<void(tb_client_t, tb_packet_t *,
-                                                const uint8_t *, uint32_t)>;
 };
 
 inline void on_completion([[maybe_unused]] uintptr_t context,

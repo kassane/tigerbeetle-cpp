@@ -27,12 +27,6 @@ auto main() -> int {
       tb::on_completion // Completion callback.
   );
 
-  // if (status != tb::TB_STATUS_SUCCESS) {
-  //   log.error(fmt::format("Failed to initialize tb::tb_client (ret={})",
-  //                         fmt::underlying(status)));
-  //   return -1;
-  // }
-
   tb::CompletionContext ctx{};
   tb::tb_packet_t *packet = nullptr;
 
@@ -54,7 +48,7 @@ auto main() -> int {
   accounts.at(1).ledger = 777;
 
   // Acquiring a packet for this request:
-  if (tb::tb_client_acquire_packet(client.get(), &packet) !=
+  if (client.acquire_packet(packet) !=
       tb::TB_PACKET_ACQUIRE_OK) {
     log.error("Too many concurrent packets.");
     return -1;
@@ -79,7 +73,7 @@ auto main() -> int {
   }
 
   // Releasing the packet, so it can be used in a next request.
-  tb::tb_client_release_packet(client.get(), packet);
+  client.release_packet(packet);
 
   if (ctx.size != 0) {
     // Checking for errors creating the accounts:
@@ -127,7 +121,7 @@ auto main() -> int {
 
     // Acquiring a packet for this request:
     tb::tb_packet_t *packet = nullptr;
-    if (tb::tb_client_acquire_packet(client.get(), &packet) !=
+    if (client.acquire_packet(packet) !=
         tb::TB_PACKET_ACQUIRE_OK) {
       log.error("Too many concurrent packets.");
       return -1;
@@ -160,7 +154,7 @@ auto main() -> int {
     }
 
     // Releasing the packet, so it can be used in the next request.
-    tb::tb_client_release_packet(client.get(), packet);
+    client.release_packet(packet);
 
     if (ctx.size != 0) {
       // Checking for errors creating the accounts:
@@ -197,7 +191,7 @@ auto main() -> int {
   tb::accountID<2> ids = {accounts.at(0).id, accounts.at(1).id};
 
   // Acquiring a packet for this request:
-  if (tb::tb_client_acquire_packet(client.get(), &packet) !=
+  if (client.acquire_packet(packet) !=
       tb::TB_PACKET_ACQUIRE_OK) {
     log.error("Too many concurrent packets.");
     return -1;
@@ -219,7 +213,7 @@ auto main() -> int {
   }
 
   // Releasing the packet, so it can be used in a next request.
-  tb::tb_client_release_packet(client.get(), packet);
+  client.release_packet(packet);
 
   if (ctx.size == 0) {
     log.warn("No accounts found!");
