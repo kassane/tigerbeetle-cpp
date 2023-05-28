@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <chrono>
-#include <numeric>
 #include <tb_client.hpp>
 
 namespace tb = tigerbeetle;
