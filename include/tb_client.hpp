@@ -18,9 +18,11 @@ a source language processor.
 
 #pragma once
 #include <array>
-#include <fmt/core.h>
 #include <fmt/color.h>
+#include <fmt/core.h>
+#include <functional>
 #include <memory>
+#include <stdexcept>
 
 namespace tigerbeetle {
 #include <tb_client.h>
@@ -39,6 +41,62 @@ struct CompletionContext {
   bool completed;
 };
 
+class Client {
+public:
+  Client(uint32_t cluster_id, const std::string address, uint32_t packets_count,
+         uintptr_t on_completion_ctx,
+         void (*on_completion_fn)(uintptr_t, tb_client_t, tb_packet_t *,
+                                  const uint8_t *, uint32_t))
+      : client(nullptr) {
+    TB_STATUS status =
+        tb_client_init(&client, cluster_id, address.c_str(), address.length(),
+                       packets_count, on_completion_ctx, on_completion_fn);
+    if (status != TB_STATUS_SUCCESS) {
+      throw std::runtime_error("Failed to initialize tb_client");
+    }
+  }
+
+  Client(const Client &) = delete;
+  Client &operator=(const Client &) = delete;
+
+  Client(Client &&other) noexcept : client(nullptr) {
+    std::swap(client, other.client);
+  }
+
+  Client &operator=(Client &&other) noexcept {
+    if (this != &other) {
+      destroy();
+      std::swap(client, other.client);
+    }
+    return *this;
+  }
+
+  ~Client() { destroy(); }
+
+  tb_client_t get() const { return client; }
+
+  void send_request(tb_packet_t *packet,
+                         CompletionContext *ctx) {
+  // Submits the request asynchronously:
+  ctx->completed = false;
+  tb_client_submit(client, packet);
+  while (!ctx->completed) {
+    // Wait for completion
+  }
+}
+
+private:
+  void destroy() {
+    if (client != nullptr) {
+      tb_client_deinit(client);
+      client = nullptr;
+    }
+  }
+  tb_client_t client;
+  using CompletionCallback = std::function<void(tb_client_t, tb_packet_t *,
+                                                const uint8_t *, uint32_t)>;
+};
+
 inline void on_completion([[maybe_unused]] uintptr_t context,
                           [[maybe_unused]] tb_client_t client,
                           tb_packet_t *packet, const uint8_t *data,
@@ -47,16 +105,6 @@ inline void on_completion([[maybe_unused]] uintptr_t context,
   std::copy(data, data + size, ctx->reply.begin());
   ctx->size = size;
   ctx->completed = true;
-}
-
-inline void send_request(tb_client_t client, tb_packet_t *packet,
-                         CompletionContext *ctx) {
-  // Submits the request asynchronously:
-  ctx->completed = false;
-  tb_client_submit(client, packet);
-  while (!ctx->completed) {
-    // Wait for completion
-  }
 }
 
 enum class LogLevel {
@@ -69,21 +117,22 @@ enum class LogLevel {
 
 class Logger {
 public:
-  static void warn(const std::string &message){
+  static void warn(const std::string &message) {
     println(LogLevel::WARN, message);
   }
-  static void trace(const std::string &message){
-     println(LogLevel::TRACE, message);
+  static void trace(const std::string &message) {
+    println(LogLevel::TRACE, message);
   }
-  static void debug(const std::string &message){
-     println(LogLevel::DEBUG, message);
+  static void debug(const std::string &message) {
+    println(LogLevel::DEBUG, message);
   }
-  static void info(const std::string &message){
-     println(LogLevel::INFO, message);
+  static void info(const std::string &message) {
+    println(LogLevel::INFO, message);
   }
-  static void error(const std::string &message){
+  static void error(const std::string &message) {
     println(LogLevel::ERROR, message);
   }
+
 private:
   static fmt::color getLogLevelColor(LogLevel level) {
     switch (level) {
