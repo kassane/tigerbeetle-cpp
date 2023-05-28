@@ -1,4 +1,7 @@
 /*
+
+Copyright (c) 2023 Matheus Catarino França (matheus-catarino@hotmail.com)
+
 Boost Software License - Version 1.0 - August 17th, 2003
 
 Permission is hereby granted, free of charge, to any person or organization
@@ -18,9 +21,11 @@ a source language processor.
 
 #pragma once
 #include <array>
-#include <fmt/core.h>
 #include <fmt/color.h>
+#include <fmt/core.h>
 #include <memory>
+#include <mutex>
+#include <stdexcept>
 
 namespace tigerbeetle {
 #include <tb_client.h>
@@ -37,6 +42,72 @@ struct CompletionContext {
   std::array<uint8_t, MAX_MESSAGE_SIZE> reply;
   int size;
   bool completed;
+  std::mutex mutex;
+};
+
+class Client {
+public:
+  Client(uint32_t cluster_id, const std::string address, uint32_t packets_count,
+         uintptr_t on_completion_ctx,
+         void (*on_completion_fn)(uintptr_t, tb_client_t, tb_packet_t *,
+                                  const uint8_t *, uint32_t))
+      : client(nullptr) {
+    TB_STATUS status =
+        tb_client_init(&client, cluster_id, address.c_str(), address.length(),
+                       packets_count, on_completion_ctx, on_completion_fn);
+    if (status != TB_STATUS_SUCCESS) {
+      throw std::runtime_error("Failed to initialize tb_client");
+    }
+  }
+
+  Client(const Client &) = delete;
+  Client &operator=(const Client &) = delete;
+
+  Client(Client &&other) noexcept : client(nullptr) {
+    std::swap(client, other.client);
+  }
+
+  Client &operator=(Client &&other) noexcept {
+    if (this != &other) {
+      destroy();
+      std::swap(client, other.client);
+    }
+    return *this;
+  }
+
+  ~Client() { destroy(); }
+
+  tb_client_t get() const { return client; }
+  TB_PACKET_ACQUIRE_STATUS acquire_packet(tb_packet_t **packet) const {
+    return tb_client_acquire_packet(client, packet);
+  }
+  void release_packet(tb_packet_t **packet) {
+    tb_client_release_packet(client, *packet);
+  }
+  void send_request(tb_packet_t *packet, CompletionContext *ctx) {
+    // Submits the request asynchronously:
+    ctx->completed = false;
+    {
+      std::lock_guard<std::mutex> lock(ctx->mutex);
+      tb_client_submit(client, packet);
+    }
+    while (true) {
+      std::lock_guard<std::mutex> lock(ctx->mutex);
+      if (ctx->completed) {
+        break;
+      }
+      // Release the lock and wait for completion
+    }
+  }
+
+private:
+  void destroy() {
+    if (client != nullptr) {
+      tb_client_deinit(client);
+      client = nullptr;
+    }
+  }
+  tb_client_t client;
 };
 
 inline void on_completion([[maybe_unused]] uintptr_t context,
@@ -44,18 +115,12 @@ inline void on_completion([[maybe_unused]] uintptr_t context,
                           tb_packet_t *packet, const uint8_t *data,
                           uint32_t size) {
   auto ctx = static_cast<CompletionContext *>(packet->user_data);
-  std::copy(data, data + size, ctx->reply.begin());
-  ctx->size = size;
-  ctx->completed = true;
-}
-
-inline void send_request(tb_client_t client, tb_packet_t *packet,
-                         CompletionContext *ctx) {
-  // Submits the request asynchronously:
-  ctx->completed = false;
-  tb_client_submit(client, packet);
-  while (!ctx->completed) {
-    // Wait for completion
+  {
+    std::lock_guard<std::mutex> lock(
+        ctx->mutex); // Lock the mutex before accessing ctx members
+    std::copy(data, data + size, ctx->reply.begin());
+    ctx->size = size;
+    ctx->completed = true;
   }
 }
 
@@ -69,21 +134,22 @@ enum class LogLevel {
 
 class Logger {
 public:
-  static void warn(const std::string &message){
+  static void warn(const std::string &message) {
     println(LogLevel::WARN, message);
   }
-  static void trace(const std::string &message){
-     println(LogLevel::TRACE, message);
+  static void trace(const std::string &message) {
+    println(LogLevel::TRACE, message);
   }
-  static void debug(const std::string &message){
-     println(LogLevel::DEBUG, message);
+  static void debug(const std::string &message) {
+    println(LogLevel::DEBUG, message);
   }
-  static void info(const std::string &message){
-     println(LogLevel::INFO, message);
+  static void info(const std::string &message) {
+    println(LogLevel::INFO, message);
   }
-  static void error(const std::string &message){
+  static void error(const std::string &message) {
     println(LogLevel::ERROR, message);
   }
+
 private:
   static fmt::color getLogLevelColor(LogLevel level) {
     switch (level) {

@@ -6,7 +6,8 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(RUN_INSTALL_ZIG "Run zig install 0.9.1" ON)
-option(BUILD_TB_C_CLIENT "Build c_client libraries with Zig" ON)
+option(BUILD_TB_C_CLIENT "Build c_client library with Zig" ON)
+option(TIGERBEETLE_BUILD_SHARED_LIBS "Build TigerBeetle as a shared library" OFF)
 option(RUN_TB_TEST "Run Tigerbeetle test" OFF)
 
 include(cmake/deps.cmake)
@@ -16,14 +17,15 @@ if(WIN32)
     link_libraries(ws2_32)
 endif()
 
-include_directories(include)
-include_directories(${TIGERBEETLE_INCLUDE_DIR})
-
 add_executable(${PROJECT_NAME}
-    "include/tb_client.hpp"
     "src/main.cpp"
 )
-target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra)
+target_include_directories(${PROJECT_NAME}
+    PUBLIC
+    "include"
+    ${TIGERBEETLE_INCLUDE_DIR}
+)
+target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Werror -Wshadow)
 target_link_libraries(${PROJECT_NAME}
     PUBLIC TigerBeetle
     PRIVATE $<TARGET_NAME_IF_EXISTS:Threads::Threads> fmt

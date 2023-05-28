@@ -1,4 +1,6 @@
+#include <algorithm>
 #include <chrono>
+#include <cstddef>
 #include <tb_client.hpp>
 
 namespace tb = tigerbeetle;
@@ -14,24 +16,15 @@ auto main() -> int {
              "TigerBeetle C++ Sample\n\n");
 
   log.trace("Connecting...");
-  tb::tb_client_t client{};
   std::string address = "127.0.0.1:3001";
 
-  tb::TB_STATUS status = tb::tb_client_init(
-      &client,         // Output client.
-      0,               // Cluster ID.
-      address.c_str(), // Cluster addresses.
-      address.size(),  //
+  tb::Client client(
+      0, // Cluster ID.
+      address,
       32, // MaxConcurrency, could be 1, since it's a single-threaded example.
       0,  // No need for a global context.
-      &tb::on_completion // Completion callback.
+      tb::on_completion // Completion callback.
   );
-
-  if (status != tb::TB_STATUS_SUCCESS) {
-    log.error(fmt::format("Failed to initialize tb::tb_client (ret={})",
-                          fmt::underlying(status)));
-    return -1;
-  }
 
   tb::CompletionContext ctx{};
   tb::tb_packet_t *packet = nullptr;
@@ -54,9 +47,9 @@ auto main() -> int {
   accounts.at(1).ledger = 777;
 
   // Acquiring a packet for this request:
-  if (tb_client_acquire_packet(client, &packet) != tb::TB_PACKET_ACQUIRE_OK) {
-      log.error("Too many concurrent packets.");
-      return -1;
+  if (client.acquire_packet(&packet) != tb::TB_PACKET_ACQUIRE_OK) {
+    log.error("Too many concurrent packets.");
+    return -1;
   }
 
   packet->operation =
@@ -68,8 +61,7 @@ auto main() -> int {
 
   log.trace("Creating accounts...");
 
- 
-  tb::send_request(client, packet, &ctx);
+  client.send_request(packet, &ctx);
 
   if (packet->status != tb::TB_PACKET_OK) {
     // Checking if the request failed:
@@ -79,7 +71,7 @@ auto main() -> int {
   }
 
   // Releasing the packet, so it can be used in a next request.
-  tb::tb_client_release_packet(client, packet);
+  client.release_packet(&packet);
 
   if (ctx.size != 0) {
     // Checking for errors creating the accounts:
@@ -104,45 +96,51 @@ auto main() -> int {
 
   std::size_t max_latency_ms = 0;
   std::size_t total_time_ms = 0;
+
   for (std::size_t i = 0; i < MAX_BATCHES; i++) {
     tb::transfer<TRANSFERS_PER_BATCH> transfers;
 
     // Zeroing the memory, so we don't have to initialize every field.
     std::memset(transfers.data(), 0, transfers.size());
 
-    for (size_t j = 0; j < TRANSFERS_PER_BATCH; j++) {
-      transfers.at(j).id = j + 1 + (i * TRANSFERS_PER_BATCH);
-      transfers.at(j).debit_account_id = accounts.at(0).id;
-      transfers.at(j).credit_account_id = accounts.at(1).id;
-      transfers.at(j).code = 2;
-      transfers.at(j).ledger = 777;
-      transfers.at(j).amount = 1;
-    }
+    std::size_t baseID = i * TRANSFERS_PER_BATCH + 1;
+    std::size_t j = 0;
 
-  // Acquiring a packet for this request:
-  if (tb_client_acquire_packet(client, &packet) != tb::TB_PACKET_ACQUIRE_OK) {
+    std::transform(transfers.begin(), transfers.end(), transfers.begin(),
+                   [&](tb::tb_transfer_t &transfer) {
+                     transfer.id = baseID + j++;
+                     transfer.debit_account_id = accounts.at(0).id;
+                     transfer.credit_account_id = accounts.at(1).id;
+                     transfer.code = 2;
+                     transfer.ledger = 777;
+                     transfer.amount = 1;
+                     return transfer;
+                   });
+
+    // Acquiring a packet for this request:
+    if (client.acquire_packet(&packet) != tb::TB_PACKET_ACQUIRE_OK) {
       log.error("Too many concurrent packets.");
       return -1;
-  }
+    }
 
     packet->operation =
-        tb::TB_OPERATION_CREATE_TRANSFERS;    // The operation to be performed.
-    packet->data = transfers.data();          // The data to be sent.
-    packet->data_size = tb::MAX_MESSAGE_SIZE; //
-    packet->user_data = &ctx;                 // User-defined context.
+        tb::TB_OPERATION_CREATE_TRANSFERS; // The operation to be performed.
+    packet->data = transfers.data();       // The data to be sent.
+    packet->data_size = tb::MAX_MESSAGE_SIZE;
+    packet->user_data = &ctx;          // User-defined context.
     packet->status = tb::TB_PACKET_OK; // Will be set when the reply arrives.
 
     std::size_t now =
         std::chrono::system_clock::now().time_since_epoch().count();
 
-    tb::send_request(client, packet, &ctx);
+    client.send_request(packet, &ctx);
 
     std::size_t elapsed_ms =
         std::chrono::system_clock::now().time_since_epoch().count() - now;
-    if (elapsed_ms > max_latency_ms)
-      max_latency_ms = elapsed_ms;
+    max_latency_ms =
+        std::max(max_latency_ms, static_cast<std::size_t>(elapsed_ms));
 
-    total_time_ms += elapsed_ms;
+    total_time_ms += static_cast<std::size_t>(elapsed_ms);
 
     if (packet->status != tb::TB_PACKET_OK) {
       // Checking if the request failed:
@@ -151,20 +149,26 @@ auto main() -> int {
       return -1;
     }
 
-    // Releasing the packet, so it can be used in a next request.
-    tb::tb_client_release_packet(client, packet);
+    // Releasing the packet, so it can be used in the next request.
+    client.release_packet(&packet);
 
     if (ctx.size != 0) {
       // Checking for errors creating the accounts:
       tb::tb_create_transfers_result_t *results =
           reinterpret_cast<tb::tb_create_transfers_result_t *>(
               ctx.reply.data());
-      int results_len = ctx.size / sizeof(tb::tb_create_transfers_result_t);
+      std::size_t results_len =
+          ctx.size / sizeof(tb::tb_create_transfers_result_t);
       log.info("create_transfers results:");
-      for (int i = 0; i < results_len; i++) {
-        log.info(fmt::format("index={}, ret={}", results[i].index,
-                             results[i].result));
-      }
+
+      std::size_t i2 = 0;
+      std::for_each(results, results + results_len,
+                    [&](const tb::tb_create_transfers_result_t &result) {
+                      log.info(fmt::format("index={}, ret={}", result.index,
+                                           result.result));
+                      i2++;
+                    });
+
       return -1;
     }
   }
@@ -189,18 +193,18 @@ auto main() -> int {
   tb::accountID<2> ids = {accounts.at(0).id, accounts.at(1).id};
 
   // Acquiring a packet for this request:
-  if (tb_client_acquire_packet(client, &packet) != tb::TB_PACKET_ACQUIRE_OK) {
-      log.error("Too many concurrent packets.");
-      return -1;
+  if (client.acquire_packet(&packet) != tb::TB_PACKET_ACQUIRE_OK) {
+    log.error("Too many concurrent packets.");
+    return -1;
   }
-  
+
   packet->operation = tb::TB_OPERATION_LOOKUP_ACCOUNTS;
   packet->data = ids.data();
   packet->data_size = sizeof(tb::tb_uint128_t) * accounts.size();
   packet->user_data = &ctx;
   packet->status = tb::TB_PACKET_OK;
 
-  tb::send_request(client, packet, &ctx);
+  client.send_request(packet, &ctx);
 
   if (packet->status != tb::TB_PACKET_OK) {
     // Checking if the request failed:
@@ -210,7 +214,7 @@ auto main() -> int {
   }
 
   // Releasing the packet, so it can be used in a next request.
-  tb::tb_client_release_packet(client, packet);
+  client.release_packet(&packet);
 
   if (ctx.size == 0) {
     log.warn("No accounts found!");
@@ -223,13 +227,12 @@ auto main() -> int {
   log.info(fmt::format("{} Account(s) found", results_len));
   fmt::println("============================================");
 
-  for (int i = 0; i < results_len; i++) {
-    log.trace(fmt::format("id={}", static_cast<std::size_t>(results[i].id)));
-    log.trace(fmt::format("debits_posted={}", results[i].debits_posted));
-    log.trace(fmt::format("credits_posted={}", results[i].credits_posted));
-  }
+  std::for_each(
+      results, results + results_len, [&](const tb::tb_account_t &result) {
+        log.trace(fmt::format("id={}", static_cast<std::size_t>(result.id)));
+        log.trace(fmt::format("debits_posted={}", result.debits_posted));
+        log.trace(fmt::format("credits_posted={}", result.credits_posted));
+      });
 
-  // Cleanup:
-  tb::tb_client_deinit(client);
   return 0;
 }
