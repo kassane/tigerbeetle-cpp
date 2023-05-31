@@ -15,7 +15,16 @@
 - zig v0.9.1 (tigerbeetle compatible)
 
 
-## How to run
+### How to run
+
+**Another toolchain**
+
+```bash
+$> cmake -B build -DTIGERBEETLE_BUILD_SHARED_LIBS=ON
+$> cmake --build build --target run_with_tb # run TigerBeetle server + C++ client 
+```
+
+**Zig toolchain**
 
 ```bash
 # Linux/MacOS
@@ -25,6 +34,23 @@ $> cmake -B build -DCMAKE_CXX_COMPILER=scripts/zigcxx.cmd
 # both
 $> cmake --build build --target run_with_tb # run TigerBeetle server + C++ client 
 ```
+
+| Compiler | Tested | Mode |
+| --- | --- | --- |
+| GCC | 🆗 | Shared |
+| GCC | ❌ | Static |
+| Clang | 🆗 | Shared |
+| Clang | ❌ | Static |
+| AppleClang | 🆗 | Shared |
+| AppleClang | ❌ | Static |
+| zig `cc/c++` | 🆗 | Shared |
+| zig `cc/c++` | 🆗 | Static |
+| MSVC | None | Shared |
+| MSVC | None | Static |
+
+**Note:** `zig c++` equal to `clang++ -stdlib=libc++ -fuse-ld=lld` for all targets (builtin)!!
+
+
 <details>
 <summary>Output</summary>
 
@@ -70,6 +96,30 @@ Terminating tigerbeetle start process...
 
 - [ ] upgrade zig 0.9.1 (stage1) to zig 0.11.0 (stage3) - pkg manager (choose cmake or zig only)
 
+
+### Frequently Asked Questions
+
+#### Do I need to install Zig to compile this project?
+
+**A:** No! You can use the C & C++ compiler of your choice [gcc, clang, ...].
+
+However, as mentioned in issue [#3](https://github.com/kassane/tigerbeetle-cpp/issues/3), it will only be possible to link dynamically. The Zig static library does not include libcompile-rt, it only includes executables and shared libraries.
+
+- https://github.com/tigerbeetledb/tigerbeetle/pull/792
+
+It is also not limited to C++, you just need to modify the CMakeLists.txt to use it with other languages supported by CMake.
+
+#### Is this project an official binding for TigerBeetleDB?
+
+**A:** No! It's only a community project. But there's nothing stopping the main developers from porting it to the official repository if they want to.
+
+#### What is the goal of `tigerbeetle-cpp`?
+
+**A:** Firstly, to provide a simple C++ solution derived from the [C binding][client-c] (thanks to @batiati).
+
+Also, to demonstrate that it's possible to use Zig with CMake to build the tb_client library without the user needing to use the Zig toolchain (in C or C++). They don't even need to learn it if they don't want to. (I suggest reconsidering this matter!!)
+
+Another important point is that TigerBeetle is a product in the early stages of development, subject to flaws and mistakes. The best way to improve this new tool is by testing, and that's where the relevance of the clients (language bindings) comes into play.
 
 ## References
 
