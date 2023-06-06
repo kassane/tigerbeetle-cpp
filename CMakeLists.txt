@@ -9,6 +9,8 @@ option(RUN_INSTALL_ZIG "Run zig install 0.9.1" ON)
 option(BUILD_TB_C_CLIENT "Build c_client library with Zig" ON)
 option(TIGERBEETLE_BUILD_SHARED_LIBS "Build TigerBeetle as a shared library" OFF)
 option(RUN_TB_TEST "Run Tigerbeetle test" OFF)
+option(ENABLE_ASAN "Build with AddressSanitizer" OFF)
+option(ENABLE_TSAN "Build with ThreadSanitizer" OFF)
 
 include(cmake/deps.cmake)
 include(cmake/FindTigerBeetle.cmake)
@@ -25,6 +27,14 @@ target_include_directories(${PROJECT_NAME}
     "include"
     ${TIGERBEETLE_INCLUDE_DIR}
 )
+if(ENABLE_ASAN)
+	target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address -fsanitize=undefined)
+	target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=address -fsanitize=undefined)
+endif()
+if(ENABLE_TSAN)
+	target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=thread)
+	target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=thread)
+endif()
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Werror -Wshadow)
 target_link_libraries(${PROJECT_NAME}
     PUBLIC TigerBeetle

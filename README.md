@@ -8,7 +8,7 @@
 
 **Libraries**
 - fmtlib v10.0.0
-- TigerBeetle C client library v0.13.14
+- TigerBeetle C client library v0.13.30
 
 **Tools**
 - cmake v3.14 or higher
@@ -91,7 +91,7 @@ Terminating tigerbeetle start process...
 | MSVC | None | Shared |
 | MSVC | None | Static |
 
-**Note:** `zig c++` equal to `clang++ -stdlib=libc++ -fuse-ld=lld` for all targets (builtin)!!
+**Note:** `zig c++` equal to `clang++ -stdlib=libc++ -fuse-ld=lld` for all targets (builtin), except to MacOS target, replacing `lld` to [`zld`](https://github.com/kubkon/zld)!!
 
 ## TODO
 
@@ -116,9 +116,9 @@ It is also not limited to C++, you just need to modify the `CMakeLists.txt` to u
 
 #### What is the goal of `tigerbeetle-cpp`?
 
-**A:** Firstly, to provide a simple C++ solution derived from the [C binding][client-c] (thanks to [@batiati](https://github,com/batiati)).
+**A:** Firstly, to provide a simple C++ solution derived from the [C binding][client-c] (thanks to [@batiati](https://github.com/batiati)).
 
-Also, to demonstrate that it's possible to use Zig with CMake to build the tb_client library without the user needing to use the Zig toolchain (C and/or C++). They don't even need to learn it if they don't want to. (I suggest reconsidering this matter!!)
+Also, to demonstrate that it's possible to use Zig with CMake to build the `tb_client` library without the user needing to use the Zig toolchain (C and/or C++). They don't even need to learn it if they don't want to. (I suggest reconsidering this matter!!)
 
 Another important point is that TigerBeetle is a product in the early stages of development, subject to flaws and mistakes. The best way to improve this new tool is by testing, and that's where the relevance of the clients (language bindings) comes into play.
 
