@@ -1,14 +1,14 @@
-# TigerBeetle C++ client
+# TigerBeetle C++ client (Header only)
 
 [TigerBeetle] is a financial accounting database designed for mission critical safety and performance to power the future of financial services.
 
 ### Prerequisites
 
- C++ version: 14
+ C++ version: 17
 
 **Libraries**
 - fmtlib v10.0.0
-- TigerBeetle C client library v0.13.30
+- TigerBeetle C client library v0.13.36
 
 **Tools**
 - cmake v3.14 or higher
@@ -37,6 +37,7 @@ $> cmake --build build --target run_with_tb # run TigerBeetle server + C++ clien
 
 ### Build tests
 
+See sample: [example/basic.cpp](example/basic.cpp)
 
 <details>
 <summary>Output</summary>

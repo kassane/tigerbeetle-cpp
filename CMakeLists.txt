@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.14)
 
 project(tb_cpp VERSION 0.10 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(RUN_INSTALL_ZIG "Run zig install 0.9.1" ON)
@@ -20,7 +20,7 @@ if(WIN32)
 endif()
 
 add_executable(${PROJECT_NAME}
-    "src/main.cpp"
+    "example/basic.cpp"
 )
 target_include_directories(${PROJECT_NAME}
     PUBLIC
@@ -35,7 +35,7 @@ if(ENABLE_TSAN)
 	target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=thread)
 	target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=thread)
 endif()
-target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Werror -Wshadow)
+target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Werror -Wshadow -Wpedantic)
 target_link_libraries(${PROJECT_NAME}
     PUBLIC TigerBeetle
     PRIVATE $<TARGET_NAME_IF_EXISTS:Threads::Threads> fmt
