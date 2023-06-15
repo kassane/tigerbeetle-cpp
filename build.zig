@@ -20,56 +20,74 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const exe = b.addExecutable(.{
-        .name = "tb-cpp",
+    buildExe(b, .{
+        .filepath = "example/basic.cpp",
         .target = target,
         .optimize = optimize,
     });
+}
+
+fn buildExe(b: *std.Build, info: BuildInfo) void {
+    const exe = b.addExecutable(.{
+        .name = info.filename(),
+        .target = info.target,
+        .optimize = info.optimize,
+    });
+
+    // Pre-Building
     exe.addIncludePath("include");
-    exe.addCSourceFile("src/main.cpp", &.{
-        "-std=c++14",
+    exe.addCSourceFile(info.filepath, &.{
         "-Wall",
         "-Wextra",
+        "-Werror",
+        "-Wpedantic",
     });
 
     // Dependencies
 
     // fmt
     const libfmt_dep = b.dependency("fmt", .{
-        .target = target,
-        .optimize = optimize,
+        .target = info.target,
+        .optimize = info.optimize,
     });
     const libfmt = libfmt_dep.artifact("fmt");
+
     // tigerbeetle
     // const libtb_dep = b.dependency("tigerbeetle", .{
-    //     .target = target,
-    //     .optimize = optimize,
+    //     .target = info.target,
+    //     .optimize = info.optimize,
     // });
     // const libtb = libtb_dep.artifact("tigerbeetle");
+
     exe.addIncludePath("build/_deps/tb-src/src/clients/c/lib/include");
-    const arch: []const u8 = switch (target.getCpuArch()) {
+    const arch: []const u8 = switch (info.target.getCpuArch()) {
         .aarch64 => "aarch64",
         else => "x86_64",
     };
-    const abi: []const u8 = switch (target.getAbi()) {
+    const abi: []const u8 = switch (info.target.getAbi()) {
         .gnu => "gnu",
         else => "musl",
     };
-    const os: []const u8 = switch (target.getOsTag()) {
+    const os: []const u8 = switch (info.target.getOsTag()) {
         .windows => "windows",
         .macos => "macos",
         else => b.fmt("linux-{s}", .{abi}),
     };
+
+    // Linking libraries
     exe.addLibraryPath(b.fmt("build/_deps/tb-src/src/clients/c/lib/{s}-{s}", .{ arch, os }));
     exe.linkSystemLibraryName("tb_client");
-    if (target.isWindows())
+    if (info.target.isWindows())
         exe.linkSystemLibrary("ws2_32");
     exe.linkLibrary(libfmt);
     // exe.linkLibrary(libtb);
     exe.linkLibCpp(); // static-linking llvm-libcxx/abi + linking OS-libc
+
+    // Post-Building
     exe.installLibraryHeaders(libfmt); // get copy fmt include
     b.installArtifact(exe); // get copy binaries from: zig-cache/ to zig-out/
 
+    // Run executable file
     const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
 
@@ -79,3 +97,14 @@ pub fn build(b: *std.Build) void {
     const run_step = b.step("run", b.fmt("Run the {s} app", .{exe.name}));
     run_step.dependOn(&run_cmd.step);
 }
+
+const BuildInfo = struct {
+    filepath: []const u8,
+    target: std.zig.CrossTarget,
+    optimize: std.builtin.OptimizeMode,
+
+    fn filename(self: BuildInfo) []const u8 {
+        var split = std.mem.split(u8, std.fs.path.basename(self.filepath), ".");
+        return split.first();
+    }
+};
