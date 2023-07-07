@@ -28,7 +28,7 @@ jobs:
         run: cmake --build build --target run_with_tb
 
       - name: Zig - Build C++ client
-        run: zig build -fsummary -freference-trace
+        run: zig build --summary all -freference-trace
 
   zig-mingw:
     runs-on: windows-latest
@@ -68,4 +68,4 @@ jobs:
         shell: msys2 {0}
         run: |
             cd /C/_
-            zig build -fsummary -freference-trace -Dtarget=${{ matrix.arch }}-windows
+            zig build --summary all -freference-trace -Dtarget=${{ matrix.arch }}-windows
