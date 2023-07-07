@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.14)
 
 project(tb_cpp VERSION 0.10 LANGUAGES CXX)
 
+cmake_policy(SET CMP0111 NEW)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -29,24 +31,24 @@ target_include_directories(${PROJECT_NAME}
     ${TIGERBEETLE_INCLUDE_DIR}
 )
 if(ENABLE_ASAN)
-	target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address -fsanitize=undefined)
-	target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=address -fsanitize=undefined)
+    target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address -fsanitize=undefined)
+    target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=address -fsanitize=undefined)
 endif()
 if(ENABLE_TSAN)
-	target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=thread)
-	target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=thread)
+    target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=thread)
+    target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=thread)
 endif()
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Werror -Wshadow -Wpedantic)
 
 if(USE_FMT)
-add_compile_definitions(-DUSE_FMT)
-target_link_libraries(${PROJECT_NAME}
-    PUBLIC TigerBeetle
-    PRIVATE $<TARGET_NAME_IF_EXISTS:Threads::Threads> fmt
-)
+    add_compile_definitions(-DUSE_FMT)
+    target_link_libraries(${PROJECT_NAME}
+        PUBLIC TigerBeetle
+        PRIVATE $<TARGET_NAME_IF_EXISTS:Threads::Threads> fmt
+    )
 else()
-target_link_libraries(${PROJECT_NAME}
-    PUBLIC TigerBeetle
-    PRIVATE $<TARGET_NAME_IF_EXISTS:Threads::Threads>
-)
+    target_link_libraries(${PROJECT_NAME}
+        PUBLIC TigerBeetle
+        PRIVATE $<TARGET_NAME_IF_EXISTS:Threads::Threads>
+    )
 endif()

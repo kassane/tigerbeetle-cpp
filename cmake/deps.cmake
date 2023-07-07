@@ -19,9 +19,9 @@ include(FetchContent)
 
 message(STATUS "TB      =>  Downloading")
 FetchContent_Declare(
-  tb
-  GIT_REPOSITORY "https://github.com/tigerbeetledb/tigerbeetle.git"
-  GIT_TAG        0.13.48
+    tb
+    GIT_REPOSITORY "https://github.com/tigerbeetledb/tigerbeetle.git"
+    GIT_TAG 0.13.48
 )
 if(USE_FMT)
     message(STATUS "-----------------------------------------")
@@ -29,7 +29,7 @@ if(USE_FMT)
     FetchContent_Declare(
         fmt
         GIT_REPOSITORY "https://github.com/fmtlib/fmt.git"
-        GIT_TAG     10.0.0
+        GIT_TAG 10.0.0
     )
     FetchContent_GetProperties(fmt)
     if(NOT fmt_POPULATED)
@@ -54,7 +54,7 @@ FetchContent_MakeAvailable(tb)
 message(STATUS "-----------------------------------------")
 
 if(USE_FMT)
-add_subdirectory(${FMT_PATH} ${CMAKE_CURRENT_BINARY_DIR}/fmt EXCLUDE_FROM_ALL)
-include_directories(${FMT_PATH}/include)
+    add_subdirectory(${FMT_PATH} ${CMAKE_CURRENT_BINARY_DIR}/fmt EXCLUDE_FROM_ALL)
+    include_directories(${FMT_PATH}/include)
 endif()
 include_directories(${TB_PATH}/src/clients/c)
