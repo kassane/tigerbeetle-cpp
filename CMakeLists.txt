@@ -9,6 +9,7 @@ option(RUN_INSTALL_ZIG "Run zig install 0.9.1" ON)
 option(BUILD_TB_C_CLIENT "Build c_client library with Zig" ON)
 option(TIGERBEETLE_BUILD_SHARED_LIBS "Build TigerBeetle as a shared library" OFF)
 option(RUN_TB_TEST "Run Tigerbeetle test" OFF)
+option(USE_FMT "Build with Fmt logger" ON)
 option(ENABLE_ASAN "Build with AddressSanitizer" OFF)
 option(ENABLE_TSAN "Build with ThreadSanitizer" OFF)
 
@@ -36,7 +37,16 @@ if(ENABLE_TSAN)
 	target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=thread)
 endif()
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Werror -Wshadow -Wpedantic)
+
+if(USE_FMT)
+add_compile_definitions(-DUSE_FMT)
 target_link_libraries(${PROJECT_NAME}
     PUBLIC TigerBeetle
     PRIVATE $<TARGET_NAME_IF_EXISTS:Threads::Threads> fmt
 )
+else()
+target_link_libraries(${PROJECT_NAME}
+    PUBLIC TigerBeetle
+    PRIVATE $<TARGET_NAME_IF_EXISTS:Threads::Threads>
+)
+endif()

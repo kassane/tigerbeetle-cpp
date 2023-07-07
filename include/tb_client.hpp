@@ -20,8 +20,10 @@ a source language processor.
 
 #pragma once
 #include <array>
+#ifdef USE_FMT
 #include <fmt/color.h>
 #include <fmt/core.h>
+#endif
 #include <memory>
 #include <mutex>
 #include <stdexcept>
@@ -123,6 +125,7 @@ inline void on_completion([[maybe_unused]] uintptr_t context,
   }
 }
 
+#ifdef USE_FMT
 enum class LogLevel {
   INFO,
   DEBUG,
@@ -188,5 +191,5 @@ private:
     return "unknown"; // Default log level if unknown
   }
 };
-
+#endif
 } // namespace tigerbeetle

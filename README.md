@@ -8,7 +8,7 @@
 
 **Libraries**
 - fmtlib v10.0.0
-- TigerBeetle C client library v0.13.36
+- TigerBeetle C client library v0.13.48
 
 **Tools**
 - cmake v3.14 or higher
@@ -20,7 +20,10 @@
 **Another C++ toolchain**
 
 ```bash
+$> cmake -B build # (tb_client.[a|lib])
+# OR
 $> cmake -B build -DTIGERBEETLE_BUILD_SHARED_LIBS=ON # (tb_client.[so|dll|dylib])
+# Build and test
 $> cmake --build build --target run_with_tb # run TigerBeetle server + C++ client 
 ```
 
@@ -82,11 +85,11 @@ Terminating tigerbeetle start process...
 | Compiler | Tested | `tb_client` library |
 | --- | --- | --- |
 | GCC | 🆗 | Shared |
-| GCC | ❌ | Static |
+| GCC | 🆗 | Static |
 | Clang | 🆗 | Shared |
-| Clang | ❌ | Static |
+| Clang | 🆗 | Static |
 | AppleClang | 🆗 | Shared |
-| AppleClang | ❌ | Static |
+| AppleClang | 🆗 | Static |
 | zig `cc/c++` | 🆗 | Shared |
 | zig `cc/c++` | 🆗 | Static |
 | MSVC | None | Shared |
@@ -107,7 +110,7 @@ Terminating tigerbeetle start process...
 
 However, as mentioned in issue [#3](https://github.com/kassane/tigerbeetle-cpp/issues/3), it will only be possible to link dynamically. The Zig static library does not include `compiler-rt` library, it only includes executables and shared libraries.
 
-- [undefined reference to `__zig_probe_stack`](https://github.com/tigerbeetledb/tigerbeetle/pull/792)
+- [undefined reference to `__zig_probe_stack`](https://github.com/tigerbeetledb/tigerbeetle/pull/792) - **Fixed**.
 
 It is also not limited to C++, you just need to modify the `CMakeLists.txt` to use it with other languages supported by CMake.
 
