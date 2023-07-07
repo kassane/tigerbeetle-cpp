@@ -50,7 +50,7 @@ jobs:
           msystem: ${{ matrix.msystem }}
           path-type: inherit
           location: D:\
-          install: git mingw-w64-clang-${{ matrix.arch }}-cmake
+          install: git mingw-w64-clang-${{ matrix.arch }}-cmake mingw-w64-clang-${{ matrix.arch }}-toolchain
           update: true
       
       - name: Move Checkout
@@ -61,7 +61,7 @@ jobs:
         shell: msys2 {0}
         run: |
             cd /C/_
-            cmake -B build -DCMAKE_CXX_COMPILER=$PWD/scripts/zigcxx.cmd
+            cmake -B build
             cmake --build build --parallel
 
       - name: Build Summary - ${{ matrix.arch }}
