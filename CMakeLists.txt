@@ -19,6 +19,7 @@ include(cmake/deps.cmake)
 include(cmake/FindTigerBeetle.cmake)
 find_package(Threads REQUIRED)
 if(WIN32)
+    link_libraries(ntdll)
     link_libraries(ws2_32)
 endif()
 
