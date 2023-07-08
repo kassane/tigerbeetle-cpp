@@ -61,8 +61,11 @@ jobs:
         shell: msys2 {0}
         run: |
             cd /C/_
-            cmake -B build -DTIGERBEETLE_BUILD_SHARED_LIBS=ON
-            cmake --build build --parallel
+            cmake -B build \
+            -DTIGERBEETLE_BUILD_SHARED_LIBS=ON \
+            -DCMAKE_BUILD_TYPE=Debug
+
+            cmake --build build --config debug --parallel
 
       - name: Build Summary - ${{ matrix.arch }}
         shell: msys2 {0}
