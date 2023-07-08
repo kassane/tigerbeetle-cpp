@@ -16,7 +16,7 @@ jobs:
           fetch-depth: 0
       - uses: goto-bus-stop/setup-zig@v2
         with:
-          version: 0.11.0-dev.2666+1e207f1ed
+          version: master
       - uses: lukka/get-cmake@latest
         with:
           cmakeVersion: latest
@@ -28,7 +28,7 @@ jobs:
         run: cmake --build build --target run_with_tb
 
       - name: Zig - Build C++ client
-        run: zig build -fsummary -freference-trace
+        run: zig build --summary all -freference-trace
 
   zig-mingw:
     runs-on: windows-latest
@@ -50,7 +50,7 @@ jobs:
           msystem: ${{ matrix.msystem }}
           path-type: inherit
           location: D:\
-          install: git mingw-w64-clang-${{ matrix.arch }}-cmake
+          install: git mingw-w64-clang-${{ matrix.arch }}-cmake mingw-w64-clang-${{ matrix.arch }}-toolchain
           update: true
       
       - name: Move Checkout
@@ -61,11 +61,11 @@ jobs:
         shell: msys2 {0}
         run: |
             cd /C/_
-            cmake -B build -DCMAKE_CXX_COMPILER=$PWD/scripts/zigcxx.cmd
-            cmake --build build --parallel
+            cmake -B build
+            cmake --build build --config debug --parallel
 
       - name: Build Summary - ${{ matrix.arch }}
         shell: msys2 {0}
         run: |
             cd /C/_
-            zig build -fsummary -freference-trace -Dtarget=${{ matrix.arch }}-windows
+            zig build --summary all -freference-trace -Dtarget=${{ matrix.arch }}-windows

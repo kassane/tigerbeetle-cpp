@@ -24,6 +24,7 @@ pub fn build(b: *std.Build) void {
         .filepath = "example/basic.cpp",
         .target = target,
         .optimize = optimize,
+        .use_fmt = b.option(bool, "use_fmt", "Build with Fmt logger") orelse true,
     });
 }
 
@@ -79,12 +80,18 @@ fn buildExe(b: *std.Build, info: BuildInfo) void {
     exe.linkSystemLibraryName("tb_client");
     if (info.target.isWindows())
         exe.linkSystemLibrary("ws2_32");
-    exe.linkLibrary(libfmt);
+    if (info.use_fmt) {
+        exe.defineCMacro("USE_FMT", null);
+        for (libfmt.include_dirs.items) |include| {
+            exe.include_dirs.append(include) catch @panic("Unavailable include_dirs");
+        }
+        exe.linkLibrary(libfmt);
+    }
+
     // exe.linkLibrary(libtb);
     exe.linkLibCpp(); // static-linking llvm-libcxx/abi + linking OS-libc
 
     // Post-Building
-    exe.installLibraryHeaders(libfmt); // get copy fmt include
     b.installArtifact(exe); // get copy binaries from: zig-cache/ to zig-out/
 
     // Run executable file
@@ -102,6 +109,7 @@ const BuildInfo = struct {
     filepath: []const u8,
     target: std.zig.CrossTarget,
     optimize: std.builtin.OptimizeMode,
+    use_fmt: bool,
 
     fn filename(self: BuildInfo) []const u8 {
         var split = std.mem.split(u8, std.fs.path.basename(self.filepath), ".");
