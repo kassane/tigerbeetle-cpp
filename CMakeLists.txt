@@ -17,14 +17,7 @@ option(ENABLE_TSAN "Build with ThreadSanitizer" OFF)
 
 include(cmake/deps.cmake)
 include(cmake/FindTigerBeetle.cmake)
-include(GetGitVersion)
-include(GetDate)
-
 find_package(Threads REQUIRED)
-
-get_git_version(GIT_VERSION)
-get_git_authors(GIT_AUTHORS)
-get_date(CURRENT_DATE)
 
 add_executable(${PROJECT_NAME}
     "example/basic.cpp"
