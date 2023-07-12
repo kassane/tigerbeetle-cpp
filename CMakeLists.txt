@@ -18,10 +18,10 @@ option(ENABLE_TSAN "Build with ThreadSanitizer" OFF)
 include(cmake/deps.cmake)
 include(cmake/FindTigerBeetle.cmake)
 find_package(Threads REQUIRED)
-if(WIN32)
-    link_libraries(ntdll)
-    link_libraries(ws2_32)
-endif()
+
+get_git_version(GIT_VERSION)
+get_git_authors(GIT_AUTHORS)
+get_date(CURRENT_DATE)
 
 add_executable(${PROJECT_NAME}
     "example/basic.cpp"
@@ -41,15 +41,19 @@ if(ENABLE_TSAN)
 endif()
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Werror -Wshadow -Wpedantic)
 
+if(WIN32)
+    link_libraries(ntdll ws2_32 wsock32 mswsock)
+endif()
+
 if(USE_FMT)
     add_compile_definitions(-DUSE_FMT)
     target_link_libraries(${PROJECT_NAME}
-        PUBLIC TigerBeetle
-        PRIVATE $<TARGET_NAME_IF_EXISTS:Threads::Threads> fmt
+        PUBLIC TigerBeetle::TigerBeetle
+        PRIVATE Threads::Threads fmt
     )
 else()
     target_link_libraries(${PROJECT_NAME}
-        PUBLIC TigerBeetle
-        PRIVATE $<TARGET_NAME_IF_EXISTS:Threads::Threads>
+        PUBLIC TigerBeetle::TigerBeetle
+        PRIVATE Threads::Threads
     )
 endif()
