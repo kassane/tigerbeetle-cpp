@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(tb_cpp VERSION 0.10 LANGUAGES CXX)
+project(tb_cpp VERSION 0.1.0 LANGUAGES CXX)
 
 cmake_policy(SET CMP0111 NEW)
 
@@ -19,6 +19,12 @@ include(cmake/deps.cmake)
 include(cmake/FindTigerBeetle.cmake)
 find_package(Threads REQUIRED)
 
+if(MINGW)
+    link_libraries(ntdll ws2_32 wsock32 mswsock)
+elseif(MSVC)
+    link_libraries(ntdll ws2_32 wsock32 mswsock bcrypt)
+endif()
+
 add_executable(${PROJECT_NAME}
     "example/basic.cpp"
 )
@@ -36,12 +42,6 @@ if(ENABLE_TSAN)
     target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=thread)
 endif()
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Werror -Wshadow -Wpedantic)
-
-if(MINGW)
-    link_libraries(ntdll ws2_32 wsock32 mswsock)
-elseif(MSVC)
-    link_libraries(ntdll ws2_32 wsock32 mswsock bcrypt)
-endif()
 
 if(USE_FMT)
     add_compile_definitions(-DUSE_FMT)
