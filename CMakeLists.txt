@@ -44,12 +44,12 @@ endif()
 if(USE_FMT)
     add_compile_definitions(-DUSE_FMT)
     target_link_libraries(${PROJECT_NAME}
-        PUBLIC TigerBeetle::TigerBeetle
+        PUBLIC TigerBeetle
         PRIVATE Threads::Threads fmt
     )
 else()
     target_link_libraries(${PROJECT_NAME}
-        PUBLIC TigerBeetle::TigerBeetle
+        PUBLIC TigerBeetle
         PRIVATE Threads::Threads
     )
 endif()
