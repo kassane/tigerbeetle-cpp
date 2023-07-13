@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(tb_cpp VERSION 0.10 LANGUAGES CXX)
+project(tb_cpp VERSION 0.1.0 LANGUAGES CXX)
 
 cmake_policy(SET CMP0111 NEW)
 
@@ -18,9 +18,11 @@ option(ENABLE_TSAN "Build with ThreadSanitizer" OFF)
 include(cmake/deps.cmake)
 include(cmake/FindTigerBeetle.cmake)
 find_package(Threads REQUIRED)
-if(WIN32)
-    link_libraries(ntdll)
-    link_libraries(ws2_32)
+
+if(MINGW)
+    link_libraries(ntdll ws2_32 wsock32 mswsock)
+elseif(MSVC)
+    link_libraries(ntdll ws2_32 wsock32 mswsock bcrypt)
 endif()
 
 add_executable(${PROJECT_NAME}
@@ -45,11 +47,11 @@ if(USE_FMT)
     add_compile_definitions(-DUSE_FMT)
     target_link_libraries(${PROJECT_NAME}
         PUBLIC TigerBeetle
-        PRIVATE $<TARGET_NAME_IF_EXISTS:Threads::Threads> fmt
+        PRIVATE Threads::Threads fmt
     )
 else()
     target_link_libraries(${PROJECT_NAME}
         PUBLIC TigerBeetle
-        PRIVATE $<TARGET_NAME_IF_EXISTS:Threads::Threads>
+        PRIVATE Threads::Threads
     )
 endif()
