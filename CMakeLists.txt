@@ -37,8 +37,10 @@ if(ENABLE_TSAN)
 endif()
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Werror -Wshadow -Wpedantic)
 
-if(WIN32)
+if(MINGW)
     link_libraries(ntdll ws2_32 wsock32 mswsock)
+elseif(MSVC)
+    link_libraries(ntdll ws2_32 wsock32 mswsock bcrypt)
 endif()
 
 if(USE_FMT)
