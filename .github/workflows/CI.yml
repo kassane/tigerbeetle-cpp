@@ -22,7 +22,7 @@ jobs:
           cmakeVersion: latest
 
       - name: CMake - Preconfigure
-        run: cmake -B build -DCMAKE_CXX_COMPILER=$PWD/scripts/zigcxx.sh
+        run: cmake -B build #-DCMAKE_CXX_COMPILER=$PWD/scripts/zigcxx.sh
 
       - name: CMake - Build C++ client
         run: cmake --build build --target run_with_tb
