@@ -19,10 +19,10 @@ include(cmake/deps.cmake)
 include(cmake/FindTigerBeetle.cmake)
 find_package(Threads REQUIRED)
 
-if(MINGW)
-    link_libraries(ntdll ws2_32 wsock32 mswsock)
-elseif(MSVC)
-    link_libraries(ntdll ws2_32 wsock32 mswsock bcrypt)
+if(WIN32)
+    set(WIN_LIBS ntdll ws2_32 wsock32 mswsock)
+else()
+    set(WIN_LIBS "")
 endif()
 
 add_executable(${PROJECT_NAME}
@@ -47,11 +47,11 @@ if(USE_FMT)
     add_compile_definitions(-DUSE_FMT)
     target_link_libraries(${PROJECT_NAME}
         PUBLIC TigerBeetle
-        PRIVATE Threads::Threads fmt
+        PRIVATE Threads::Threads fmt ${WIN_LIBS}
     )
 else()
     target_link_libraries(${PROJECT_NAME}
         PUBLIC TigerBeetle
-        PRIVATE Threads::Threads
+        PRIVATE Threads::Threads ${WIN_LIBS}
     )
 endif()
