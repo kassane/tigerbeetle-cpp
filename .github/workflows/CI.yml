@@ -22,7 +22,7 @@ jobs:
           cmakeVersion: latest
 
       - name: CMake - Preconfigure
-        run: cmake -B build -DCMAKE_CXX_COMPILER=$PWD/scripts/zigcxx.sh
+        run: cmake -B build
 
       - name: CMake - Build C++ client
         run: cmake --build build --target run_with_tb
@@ -30,12 +30,15 @@ jobs:
       - name: Zig - Build C++ client
         run: zig build --summary all -freference-trace
 
-  zig-mingw:
+  msys2-mingw:
     runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
-        include: [{ msystem: CLANG64, arch: x86_64, prefix: /clang64 }]
+        include:
+        - { sys: mingw64, env: x86_64 } # msvcrt + libstdc++
+        - { sys: ucrt64,  env: ucrt-x86_64 } # ucrt + libstdc++
+        - { sys: clang64, env: clang-x86_64 } # ucrt + libc++
     steps:
       - uses: actions/checkout@v3
         with:
@@ -47,25 +50,25 @@ jobs:
           version: master
       - uses: msys2/setup-msys2@v2
         with:
-          msystem: ${{ matrix.msystem }}
+          msystem: ${{ matrix.sys }}
           path-type: inherit
           location: D:\
-          install: git mingw-w64-clang-${{ matrix.arch }}-cmake mingw-w64-clang-${{ matrix.arch }}-toolchain
+          install: git mingw-w64-${{matrix.env}}-cmake mingw-w64-${{matrix.env}}-toolchain
           update: true
       
       - name: Move Checkout
         run: |
           Copy-Item -Path ".\temp" -Destination "C:\_" -Recurse
 
-      - name: CMake Build - ${{ matrix.arch }}
+      - name: CMake - Build C++ client
         shell: msys2 {0}
         run: |
             cd /C/_
             cmake -B build
             cmake --build build --config debug --parallel
 
-      - name: Build Summary - ${{ matrix.arch }}
+      - name: Zig - Build C++ client
         shell: msys2 {0}
         run: |
             cd /C/_
-            zig build --summary all -freference-trace -Dtarget=${{ matrix.arch }}-windows
+            zig build --summary all -freference-trace
