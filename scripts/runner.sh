@@ -27,7 +27,7 @@ echo "Starting replica 0"
 
 echo ""
 echo "running client..."
-../../tb_cpp
+$1
 echo ""
 
 if [ -f "$FILE" ]; then

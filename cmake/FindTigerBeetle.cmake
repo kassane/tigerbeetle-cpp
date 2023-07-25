@@ -69,23 +69,23 @@ else()
 endif()
 
 if(WIN32)
-    set(BUILD_TB ${TIGERBEETLE_ROOT_DIR}/scripts/build.bat)
+    set(BUILD_TB ${TIGERBEETLE_ROOT_DIR}/zig/zig.exe build)
     set(RUN_WITH_TB ${CMAKE_SOURCE_DIR}/scripts/runner.bat)
 else()
-    set(BUILD_TB ${TIGERBEETLE_ROOT_DIR}/scripts/build.sh)
+    set(BUILD_TB ${TIGERBEETLE_ROOT_DIR}/zig/zig build)
     set(RUN_WITH_TB ${CMAKE_SOURCE_DIR}/scripts/runner.sh)
 endif()
 
 if(BUILD_TB_C_CLIENT)
     # Build c_client with Zig
-    message(STATUS "Build c_client libraries with Zig 0.9.1")
+    message(STATUS "Build c_client libraries with Zig")
     execute_process(
         COMMAND ${BUILD_TB} c_client ${ZIG_BUILD_TYPE} ${ZIG_CONFIG}
         WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
         RESULT_VARIABLE BUILD_C_CLIENT_RESULT
     )
     if(NOT ${BUILD_C_CLIENT_RESULT} EQUAL 0)
-        message(FATAL_ERROR "Failed to build c_client libraries with Zig 0.9.1")
+        message(FATAL_ERROR "Failed to build c_client libraries with Zig")
     endif()
 endif()
 
@@ -158,18 +158,22 @@ endif()
 
 # Create a custom target to run_with_tb
 add_custom_target(run_with_tb
-    DEPENDS ${PROJECT_NAME}
+    DEPENDS basic_example
+    DEPENDS two_phase_example
+    DEPENDS multiple_two_phase_example
     WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
 )
 
-# # Add a post-build event to kill the tigerbeetle start process after running ${PROJECT_NAME}
+# Add a post-build event to kill the tigerbeetle start process after running ${app}
 add_custom_command(TARGET run_with_tb POST_BUILD
-    COMMAND ${RUN_WITH_TB}
+    COMMAND ${RUN_WITH_TB} ${CMAKE_CURRENT_BINARY_DIR}/basic_example
+    COMMAND ${RUN_WITH_TB} ${CMAKE_CURRENT_BINARY_DIR}/two_phase_example
+    COMMAND ${RUN_WITH_TB} ${CMAKE_CURRENT_BINARY_DIR}/multiple_two_phase_example
     COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Killing tigerbeetle start process..."
-    COMMAND ${CMAKE_COMMAND} -E sleep 2 # Delay to ensure ${PROJECT_NAME} has started
+    COMMAND ${CMAKE_COMMAND} -E sleep 2 # Delay to ensure ${app} has started
     COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Terminating tigerbeetle start process..."
     WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
-    COMMENT "Running ${PROJECT_NAME} with TigerBeetle"
+    COMMENT "Running ${app} with TigerBeetle"
 )
 
 # Clean the zig-cache directory
