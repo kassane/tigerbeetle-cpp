@@ -34,5 +34,5 @@ start /B "tigerbeetle_0" zig-out\bin\tigerbeetle.exe start --addresses=3001 !ZIG
 
 echo.
 echo client running...
-..\..\tb_cpp.exe
+..\..\basic_example.exe
 exit /b %errorlevel%

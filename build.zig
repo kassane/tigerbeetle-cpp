@@ -19,12 +19,24 @@ const std = @import("std");
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-
+    const fmt = b.option(bool, "use_fmt", "Build with fmt logger") orelse true;
     buildExe(b, .{
-        .filepath = "example/basic.cpp",
+        .filepath = "examples/basic.cpp",
         .target = target,
         .optimize = optimize,
-        .use_fmt = b.option(bool, "use_fmt", "Build with Fmt logger") orelse true,
+        .use_fmt = fmt,
+    });
+    buildExe(b, .{
+        .filepath = "examples/two_phase.cpp",
+        .target = target,
+        .optimize = optimize,
+        .use_fmt = fmt,
+    });
+    buildExe(b, .{
+        .filepath = "examples/two_phase_many.cpp",
+        .target = target,
+        .optimize = optimize,
+        .use_fmt = fmt,
     });
 }
 
@@ -101,7 +113,7 @@ fn buildExe(b: *std.Build, info: BuildInfo) void {
     if (b.args) |args| {
         run_cmd.addArgs(args);
     }
-    const run_step = b.step("run", b.fmt("Run the {s} app", .{exe.name}));
+    const run_step = b.step(info.filename(), b.fmt("Run the {s} app", .{info.filename()}));
     run_step.dependOn(&run_cmd.step);
 }
 

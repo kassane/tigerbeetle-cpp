@@ -21,7 +21,7 @@ message(STATUS "TB      =>  Downloading")
 FetchContent_Declare(
     tb
     GIT_REPOSITORY "https://github.com/tigerbeetledb/tigerbeetle.git"
-    GIT_TAG 0.13.65
+    GIT_TAG 9430dc6942aa7de279ad7d2c750b3cbcd659523f #0.13.76
 )
 if(USE_FMT)
     message(STATUS "-----------------------------------------")

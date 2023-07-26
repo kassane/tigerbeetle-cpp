@@ -8,11 +8,11 @@
 
 **Libraries**
 - fmtlib v10.0.0
-- TigerBeetle C client library v0.13.65
+- TigerBeetle C client library v0.13.75
 
 **Tools**
 - cmake v3.14 or higher
-- zig v0.9.1 (tigerbeetle compatible)
+- zig v0.10.1 (tigerbeetle compatible)
 
 
 ### How to Build and Run
@@ -38,9 +38,11 @@ $> cmake -B build -DCMAKE_CXX_COMPILER=scripts/zigcxx.cmd
 $> cmake --build build --target run_with_tb # run TigerBeetle server + C++ client 
 ```
 
-### Build tests
+### Build Samples
 
-See sample: [example/basic.cpp](example/basic.cpp)
+**See:**
+- [examples/basic.cpp](examples/basic.cpp)
+- [examples/two_phase.cpp](examples/two_phase.cpp)
 
 <details>
 <summary>Output</summary>
@@ -99,7 +101,7 @@ Terminating tigerbeetle start process...
 
 ## TODO
 
-- [ ] upgrade zig 0.9.1 (stage1) to zig 0.11.0 (stage3) - pkg manager (choose cmake or zig only)
+- [ ] upgrade zig 0.10.1 (stage1) to zig 0.11.0 (stage3) - pkg manager (choose cmake or zig only)
 
 
 ## Frequently Asked Questions

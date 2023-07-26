@@ -13,7 +13,7 @@ auto main() -> int {
   tb::Logger log;
 
   fmt::print(fmt::fg(fmt::color::green_yellow) | fmt::emphasis::bold,
-             "TigerBeetle C++ Sample\n\n");
+             "TigerBeetle C++ - Basic [Sample]\n\n");
 
   log.trace("Connecting...");
   std::string address = "127.0.0.1:3001";
