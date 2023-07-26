@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <vector>
 #include <tb_client.hpp>
 #include <cassert>
 

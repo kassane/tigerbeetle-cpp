@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <cassert>
 #include <tb_client.hpp>
-#include <vector>
 
 namespace tb = tigerbeetle;
 

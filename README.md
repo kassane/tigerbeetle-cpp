@@ -8,7 +8,7 @@
 
 **Libraries**
 - fmtlib v10.0.0
-- TigerBeetle C client library v0.13.75
+- TigerBeetle C client library v0.13.76
 
 **Tools**
 - cmake v3.14 or higher
