@@ -48,13 +48,13 @@ fn buildExe(b: *std.Build, info: BuildInfo) void {
     });
 
     // Pre-Building
-    exe.addIncludePath("include");
-    exe.addCSourceFile(info.filepath, &.{
+    exe.addIncludePath(Path.relative("include"));
+    exe.addCSourceFile(.{ .file = Path.relative(info.filepath), .flags = &.{
         "-Wall",
         "-Wextra",
         "-Werror",
         "-Wpedantic",
-    });
+    } });
 
     // Dependencies
 
@@ -72,7 +72,7 @@ fn buildExe(b: *std.Build, info: BuildInfo) void {
     // });
     // const libtb = libtb_dep.artifact("tigerbeetle");
 
-    exe.addIncludePath("build/_deps/tb-src/src/clients/c/lib/include");
+    exe.addIncludePath(Path.relative("build/_deps/tb-src/src/clients/c/lib/include"));
     const arch: []const u8 = switch (info.target.getCpuArch()) {
         .aarch64 => "aarch64",
         else => "x86_64",
@@ -88,7 +88,7 @@ fn buildExe(b: *std.Build, info: BuildInfo) void {
     };
 
     // Linking libraries
-    exe.addLibraryPath(b.fmt("build/_deps/tb-src/src/clients/c/lib/{s}-{s}", .{ arch, os }));
+    exe.addLibraryPath(Path.relative(b.fmt("build/_deps/tb-src/src/clients/c/lib/{s}-{s}", .{ arch, os })));
     exe.linkSystemLibraryName("tb_client");
     if (info.target.isWindows())
         exe.linkSystemLibrary("ws2_32");
@@ -128,3 +128,5 @@ const BuildInfo = struct {
         return split.first();
     }
 };
+
+const Path = std.Build.LazyPath;

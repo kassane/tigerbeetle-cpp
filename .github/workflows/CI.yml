@@ -22,10 +22,10 @@ jobs:
           cmakeVersion: latest
 
       - name: CMake - Preconfigure
-        run: cmake -B build
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
 
       - name: CMake - Build C++ client
-        run: cmake --build build --target run_with_tb
+        run: cmake --build build --config Release --target run_with_tb
 
       - name: Zig - Build C++ client
         run: zig build --summary all -freference-trace

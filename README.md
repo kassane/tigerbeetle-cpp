@@ -8,7 +8,7 @@
 
 **Libraries**
 - fmtlib v10.0.0
-- TigerBeetle C client library v0.13.76
+- TigerBeetle C client library v0.13.85
 
 **Tools**
 - cmake v3.14 or higher
@@ -101,7 +101,7 @@ Terminating tigerbeetle start process...
 
 ## TODO
 
-- [ ] upgrade zig 0.10.1 (stage1) to zig 0.11.0 (stage3) - pkg manager (choose cmake or zig only)
+- [ ] upgrade zig 0.10.1 to zig 0.11.0 - pkg manager (choose cmake or zig only)
 
 
 ## Frequently Asked Questions
