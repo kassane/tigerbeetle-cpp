@@ -7,12 +7,12 @@
  C++ version: 17
 
 **Libraries**
-- fmtlib v10.0.0
-- TigerBeetle C client library v0.13.85
+- fmtlib v10.1.0
+- TigerBeetle C client library (latest version - branch main)
 
 **Tools**
 - cmake v3.14 or higher
-- zig v0.10.1 (tigerbeetle compatible)
+- zig v0.11.0 (tigerbeetle compatible)
 
 
 ### How to Build and Run
@@ -43,6 +43,7 @@ $> cmake --build build --target run_with_tb # run TigerBeetle server + C++ clien
 **See:**
 - [examples/basic.cpp](examples/basic.cpp)
 - [examples/two_phase.cpp](examples/two_phase.cpp)
+- [examples/two_phase_many.cpp](examples/two_phase_many.cpp)
 
 <details>
 <summary>Output</summary>
@@ -101,7 +102,7 @@ Terminating tigerbeetle start process...
 
 ## TODO
 
-- [ ] upgrade zig 0.10.1 to zig 0.11.0 - pkg manager (choose cmake or zig only)
+- [ ] zig 0.11.0 - missing zig-pkg (choose cmake or zig only) to `c_client` support.
 
 
 ## Frequently Asked Questions

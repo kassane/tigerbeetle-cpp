@@ -21,7 +21,7 @@ message(STATUS "TB      =>  Downloading")
 FetchContent_Declare(
     tb
     GIT_REPOSITORY "https://github.com/tigerbeetledb/tigerbeetle.git"
-    GIT_TAG 0.13.85
+    GIT_TAG main
 )
 if(USE_FMT)
     message(STATUS "-----------------------------------------")
@@ -29,7 +29,7 @@ if(USE_FMT)
     FetchContent_Declare(
         fmt
         GIT_REPOSITORY "https://github.com/fmtlib/fmt.git"
-        GIT_TAG 10.0.0
+        GIT_TAG 10.1.0
     )
     FetchContent_GetProperties(fmt)
     if(NOT fmt_POPULATED)

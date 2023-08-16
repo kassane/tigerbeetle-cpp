@@ -54,6 +54,7 @@ fn buildExe(b: *std.Build, info: BuildInfo) void {
         "-Wextra",
         "-Werror",
         "-Wpedantic",
+        "-Wshadow",
     } });
 
     // Dependencies

@@ -61,10 +61,10 @@ if(RUN_INSTALL_ZIG)
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(ZIG_BUILD_TYPE "-Drelease-safe=false")
+    set(ZIG_BUILD_TYPE "")
     set(ZIG_CONFIG "-Dconfig=default")
 else()
-    set(ZIG_BUILD_TYPE "-Drelease-safe")
+    set(ZIG_BUILD_TYPE "-Doptimize=ReleaseSafe")
     set(ZIG_CONFIG "-Dconfig=production")
 endif()
 
