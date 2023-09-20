@@ -25,11 +25,11 @@ jobs:
         with:
           cmakeVersion: latest
 
-      - name: CMake - Preconfigure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+      - name: CMake - Configure
+        run: cmake -B build -DBUILD_EXAMPLES=ON
 
       - name: CMake - Build C++ client
-        run: cmake --build build --config Release --target run_with_tb
+        run: cmake --build build --target run_with_tb
 
       - name: Zig - Build C++ client
         run: zig build --summary all -freference-trace
@@ -64,12 +64,17 @@ jobs:
         run: |
           Copy-Item -Path ".\temp" -Destination "C:\_" -Recurse
 
+      - name: CMake - Configure
+        shell: msys2 {0}
+        run: |
+            cd /C/_
+            cmake -B build -DBUILD_EXAMPLES=ON
+      
       - name: CMake - Build C++ client
         shell: msys2 {0}
         run: |
             cd /C/_
-            cmake -B build
-            cmake --build build --config debug --parallel
+            cmake --build build --parallel
 
       - name: Zig - Build C++ client
         shell: msys2 {0}

@@ -30,7 +30,7 @@ endif()
 
 
 # Set the root directory of the TigerBeetle library
-set(TIGERBEETLE_ROOT_DIR ${CMAKE_CURRENT_BINARY_DIR}/_deps/tb-src)
+set(TIGERBEETLE_ROOT_DIR ${CMAKE_BINARY_DIR}/_deps/tb-src)
 
 # Specify the directories for different platforms
 set(TIGERBEETLE_INCLUDE_DIR ${TIGERBEETLE_ROOT_DIR}/src/clients/c/lib/include)
@@ -128,20 +128,23 @@ else()
 endif()
 find_library(TigerBeetle NAMES ${CMAKE_TIGERBEETLE_LIBS_INIT}${CMAKE_TIGERBEETLE_LIBS_SUFFIX} PATHS ${TIGERBEETLE_LIBRARY_DIR})
 
-if (TigerBeetle STREQUAL "TigerBeetle-NOTFOUND")
+if(TigerBeetle STREQUAL "TigerBeetle-NOTFOUND")
     message(FATAL_ERROR "Failed to find TigerBeetle library.")
 endif()
 
 if(TIGERBEETLE_BUILD_SHARED_LIBS)
     add_library(TigerBeetle SHARED IMPORTED)
-    file(COPY ${TIGERBEETLE_LIBRARY_DIR}/${CMAKE_TIGERBEETLE_LIBS_INIT}${CMAKE_TIGERBEETLE_LIBS_SUFFIX}
-        DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 else()
     add_library(TigerBeetle STATIC IMPORTED)
 endif()
+add_library(TigerBeetle::TigerBeetle ALIAS TigerBeetle)
 set_target_properties(TigerBeetle PROPERTIES IMPORTED_LOCATION ${TigerBeetle})
 set_target_properties(TigerBeetle PROPERTIES IMPORTED_IMPLIB ${TIGERBEETLE_LIBRARY_DIR}/${CMAKE_TIGERBEETLE_LIBS_INIT}${CMAKE_TIGERBEETLE_LIBS_SUFFIX})
-
+# copy library and header
+file(COPY ${TIGERBEETLE_LIBRARY_DIR}/${CMAKE_TIGERBEETLE_LIBS_INIT}${CMAKE_TIGERBEETLE_LIBS_SUFFIX}
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${TIGERBEETLE_INCLUDE_DIR}/tb_client.h
+    DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 if(RUN_TB_TEST)
     # Build and run test with Zig
