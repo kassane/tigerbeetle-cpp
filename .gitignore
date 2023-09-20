@@ -38,3 +38,4 @@
 /.cache/
 /vendor/
 *.tigerbeetle
+tb_client.h

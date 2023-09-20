@@ -7,7 +7,7 @@
  C++ version: 17
 
 **Libraries**
-- fmtlib v10.1.0
+- fmtlib v10.1.1
 - TigerBeetle C client library (latest version - branch main)
 
 **Tools**
@@ -23,8 +23,8 @@
 $> cmake -B build # (tb_client.[a|lib])
 # OR
 $> cmake -B build -DTIGERBEETLE_BUILD_SHARED_LIBS=ON # (tb_client.[so|dll|dylib])
-# Build and test
-$> cmake --build build --target run_with_tb # run TigerBeetle server + C++ client 
+# Build and test - build client examples
+$> cmake --build build -DBUILD_EXAMPLES=ON --target run_with_tb # run TigerBeetle server + C++ client 
 ```
 
 **Zig toolchain**
@@ -34,8 +34,29 @@ $> cmake --build build --target run_with_tb # run TigerBeetle server + C++ clien
 $> cmake -B build -DCMAKE_CXX_COMPILER=scripts/zigcxx.sh
 # Windows
 $> cmake -B build -DCMAKE_CXX_COMPILER=scripts/zigcxx.cmd
-# both
-$> cmake --build build --target run_with_tb # run TigerBeetle server + C++ client 
+```
+
+### How to use
+
+- Add on your cmake project:
+
+```cmake
+include(FetchContent)
+
+find_package(TigerBeetle 0.3.0)
+if (NOT TigerBeetle_FOUND)
+    FetchContent_Declare(TigerBeetle GIT_REPOSITORY https://github.com/kassane/tigerbeetle-cpp.git
+        GIT_TAG main)
+    FetchContent_GetProperties(TigerBeetle)
+    FetchContent_MakeAvailable(TigerBeetle)
+endif()
+
+# linking your app to tb_client library
+target_link_libraries(${PROJECT_NAME}
+    PRIVATE tb_client
+)
+target_include_directories(${PROJECT_NAME} PUBLIC ${TigerBeetle_SOURCE_DIR}/include)
+target_link_directories(${PROJECT_NAME} PUBLIC ${TigerBeetle_BINARY_DIR})
 ```
 
 ### Build Samples
