@@ -12,7 +12,7 @@ option(BUILD_TB_C_CLIENT "Build c_client library with Zig" ON)
 option(BUILD_EXAMPLES "Build client examples" OFF)
 option(TIGERBEETLE_BUILD_SHARED_LIBS "Build TigerBeetle as a shared library" OFF)
 option(RUN_TB_TEST "Run Tigerbeetle test" OFF)
-option(USE_FMT "Build with Fmt logger" ON)
+option(USE_FMT "Build with Fmt logger" OFF)
 option(ENABLE_ASAN "Build with AddressSanitizer" OFF)
 option(ENABLE_TSAN "Build with ThreadSanitizer" OFF)
 
@@ -26,7 +26,9 @@ else()
     set(WIN_LIBS "")
 endif()
 target_include_directories(TigerBeetle INTERFACE "include" ${TIGERBEETLE_INCLUDE_DIR})
-
+if(USE_FMT)
+    add_compile_definitions(-DUSE_FMT)
+endif()
 if(BUILD_EXAMPLES)
     add_executable(basic_example
         "examples/basic.cpp"
@@ -61,7 +63,6 @@ if(BUILD_EXAMPLES)
     target_compile_options(multiple_two_phase_example PRIVATE -Wall -Wextra -Werror -Wshadow -Wpedantic)
 
     if(USE_FMT)
-        add_compile_definitions(-DUSE_FMT)
         target_link_libraries(basic_example
             PUBLIC TigerBeetle::TigerBeetle
             PRIVATE Threads::Threads fmt ${WIN_LIBS}
