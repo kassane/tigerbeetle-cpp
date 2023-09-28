@@ -70,10 +70,10 @@ endif()
 
 if(WIN32)
     set(BUILD_TB ${TIGERBEETLE_ROOT_DIR}/zig/zig.exe build)
-    set(RUN_WITH_TB ${CMAKE_SOURCE_DIR}/scripts/runner.bat)
+    set(RUN_WITH_TB ${CMAKE_CURRENT_SOURCE_DIR}/scripts/runner.bat)
 else()
     set(BUILD_TB ${TIGERBEETLE_ROOT_DIR}/zig/zig build)
-    set(RUN_WITH_TB ${CMAKE_SOURCE_DIR}/scripts/runner.sh)
+    set(RUN_WITH_TB ${CMAKE_CURRENT_SOURCE_DIR}/scripts/runner.sh)
 endif()
 
 if(BUILD_TB_C_CLIENT)
@@ -159,25 +159,36 @@ if(RUN_TB_TEST)
     endif()
 endif()
 
+# List of target names to run
+if(BUILD_EXAMPLES)
+    set(APP_TARGETS
+        basic_example
+        two_phase_example
+        multiple_two_phase_example
+    )
+endif()
+
 # Create a custom target to run_with_tb
 add_custom_target(run_with_tb
-    DEPENDS basic_example
-    DEPENDS two_phase_example
-    DEPENDS multiple_two_phase_example
+    DEPENDS ${APP_TARGETS}
     WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
 )
 
-# Add a post-build event to kill the tigerbeetle start process after running ${app}
-add_custom_command(TARGET run_with_tb POST_BUILD
-    COMMAND ${RUN_WITH_TB} ${CMAKE_CURRENT_BINARY_DIR}/basic_example
-    COMMAND ${RUN_WITH_TB} ${CMAKE_CURRENT_BINARY_DIR}/two_phase_example
-    COMMAND ${RUN_WITH_TB} ${CMAKE_CURRENT_BINARY_DIR}/multiple_two_phase_example
-    COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Killing tigerbeetle start process..."
-    COMMAND ${CMAKE_COMMAND} -E sleep 2 # Delay to ensure ${app} has started
-    COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Terminating tigerbeetle start process..."
-    WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
-    COMMENT "Running ${app} with TigerBeetle"
-)
+# Add a post-build event to run each target and perform other tasks
+if(NOT APP_TARGETS)
+    message(FATAL_ERROR "Missing application to running!!")
+else()
+    foreach(app ${APP_TARGETS})
+        add_custom_command(TARGET run_with_tb POST_BUILD
+            COMMAND ${RUN_WITH_TB} ${CMAKE_BINARY_DIR}/${app}
+            COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Killing tigerbeetle start process for ${app}..."
+            COMMAND ${CMAKE_COMMAND} -E sleep 2 # Delay to ensure ${app} has started
+            COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Terminating tigerbeetle start process for ${app}..."
+            WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
+            COMMENT "Running ${app} with TigerBeetle"
+        )
+    endforeach()
+endif()
 
 # Clean the zig-cache directory
 execute_process(
