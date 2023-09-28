@@ -43,11 +43,12 @@ $> cmake -B build -DCMAKE_CXX_COMPILER=scripts/zigcxx.cmd
 ```cmake
 include(FetchContent)
 
-find_package(TigerBeetle 0.3.0)
+find_package(TigerBeetle 0.3.0 QUIET)
 if (NOT TigerBeetle_FOUND)
     FetchContent_Declare(TigerBeetle GIT_REPOSITORY https://github.com/kassane/tigerbeetle-cpp.git
         GIT_TAG main)
     FetchContent_GetProperties(TigerBeetle)
+    set(APP_TARGETS ${PROJECT_NAME})
     FetchContent_MakeAvailable(TigerBeetle)
 endif()
 
