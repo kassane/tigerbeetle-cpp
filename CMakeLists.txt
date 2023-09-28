@@ -1,11 +1,19 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.8...3.27)
+
+if(${CMAKE_VERSION} VERSION_LESS 3.14)
+    cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
+endif()
 
 project(tb_cpp VERSION 0.3.0 LANGUAGES CXX)
 
-cmake_policy(SET CMP0111 NEW)
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Choose default type of build (Debug)" FORCE)
+elseif(NOT CMAKE_BUILD_TYPE STREQUAL Debug)
+    set(CMAKE_CONFIGURATION_TYPES "Release")
+endif()
 
 option(RUN_INSTALL_ZIG "Run zig install (build tigerbeeble library)" ON)
 option(BUILD_TB_C_CLIENT "Build c_client library with Zig" ON)
@@ -16,6 +24,7 @@ option(USE_FMT "Build with Fmt logger" OFF)
 option(ENABLE_ASAN "Build with AddressSanitizer" OFF)
 option(ENABLE_TSAN "Build with ThreadSanitizer" OFF)
 
+include(FeatureSummary)
 include(cmake/deps.cmake)
 include(cmake/FindTigerBeetle.cmake)
 find_package(Threads REQUIRED)
@@ -65,15 +74,15 @@ if(BUILD_EXAMPLES)
     if(USE_FMT)
         target_link_libraries(basic_example
             PUBLIC TigerBeetle::TigerBeetle
-            PRIVATE Threads::Threads fmt ${WIN_LIBS}
+            PRIVATE Threads::Threads fmt::fmt ${WIN_LIBS}
         )
         target_link_libraries(two_phase_example
             PUBLIC TigerBeetle::TigerBeetle
-            PRIVATE Threads::Threads fmt ${WIN_LIBS}
+            PRIVATE Threads::Threads fmt::fmt ${WIN_LIBS}
         )
         target_link_libraries(multiple_two_phase_example
             PUBLIC TigerBeetle::TigerBeetle
-            PRIVATE Threads::Threads fmt ${WIN_LIBS}
+            PRIVATE Threads::Threads fmt::fmt ${WIN_LIBS}
         )
     else()
         target_link_libraries(basic_example
@@ -90,3 +99,13 @@ if(BUILD_EXAMPLES)
         )
     endif()
 endif()
+
+file(
+    WRITE "${CMAKE_BINARY_DIR}/.clang-tidy"
+    "
+---
+Checks: '-*,llvm-twine-local'
+...
+"
+)
+feature_summary(WHAT ALL INCLUDE_QUIET_PACKAGES FATAL_ON_MISSING_REQUIRED_PACKAGES)
