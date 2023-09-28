@@ -76,7 +76,7 @@ public:
     return *this;
   }
 
-  ~Client() { destroy(); }
+  ~Client() noexcept { destroy(); }
 
   tb_client_t get() const { return client; }
   TB_PACKET_ACQUIRE_STATUS acquire_packet(tb_packet_t **packet) const {
