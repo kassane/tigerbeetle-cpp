@@ -159,20 +159,15 @@ if(RUN_TB_TEST)
     endif()
 endif()
 
-# List of target names to run
-if(BUILD_EXAMPLES)
-    set(APP_TARGETS
-        basic_example
-        two_phase_example
-        multiple_two_phase_example
-    )
-endif()
-
 # Create a custom target to run_with_tb
 add_custom_target(run_with_tb
     DEPENDS ${APP_TARGETS}
     WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
 )
+
+if(NOT TB_ADDRESS)
+    set(TB_ADDRESS 3001)
+endif()
 
 # Add a post-build event to run each target and perform other tasks
 if(NOT APP_TARGETS)
@@ -180,7 +175,7 @@ if(NOT APP_TARGETS)
 else()
     foreach(app ${APP_TARGETS})
         add_custom_command(TARGET run_with_tb POST_BUILD
-            COMMAND ${RUN_WITH_TB} ${CMAKE_BINARY_DIR}/${app}
+            COMMAND ${RUN_WITH_TB} ${CMAKE_BINARY_DIR}/${app} ${TB_ADDRESS}
             COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Killing tigerbeetle start process for ${app}..."
             COMMAND ${CMAKE_COMMAND} -E sleep 2 # Delay to ensure ${app} has started
             COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Terminating tigerbeetle start process for ${app}..."

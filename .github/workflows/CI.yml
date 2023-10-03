@@ -26,7 +26,7 @@ jobs:
           cmakeVersion: latest
 
       - name: CMake - Configure
-        run: cmake -B build -DUSE_FMT=ON -DBUILD_EXAMPLES=ON -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B build -DUSE_FMT=ON -DBUILD_EXAMPLES=ON
 
       - name: CMake - Build C++ client
         run: cmake --build build --target run_with_tb
