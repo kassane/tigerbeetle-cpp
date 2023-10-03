@@ -48,7 +48,6 @@ if(USE_FMT)
     add_compile_definitions(-DUSE_FMT)
 endif()
 if(BUILD_EXAMPLES)
-
     foreach(app ${APP_TARGETS})
         # Add the source file for each target
         add_executable(${app} "examples/${app}.cpp")
