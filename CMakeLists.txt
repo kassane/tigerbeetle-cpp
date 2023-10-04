@@ -33,6 +33,8 @@ if(BUILD_EXAMPLES)
     )
 endif()
 
+set(TB_VERSION batiati-client-panic)
+
 include(FeatureSummary)
 include(cmake/deps.cmake)
 include(cmake/FindTigerBeetle.cmake)
