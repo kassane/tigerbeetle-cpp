@@ -42,7 +42,7 @@ if(NOT COMMAND FetchContent_Populate)
 endif()
 set(FETCHCONTENT_QUIET FALSE)
 
-message(STATUS "TB      =>  Downloading")
+message(STATUS "TigerBeetle    =>  Downloading")
 FetchContent_Declare(
     tb
     GIT_REPOSITORY "https://github.com/tigerbeetledb/tigerbeetle.git"
@@ -62,6 +62,15 @@ if(USE_FMT)
     endif()
     set(FMT_PATH ${fmt_SOURCE_DIR})
 endif()
+if(BUILD_TESTS)
+    message(STATUS "Doctest   =>  Downloading")
+    FetchContent_Declare(
+        doc
+        GIT_REPOSITORY "https://github.com/doctest/doctest.git"
+        GIT_TAG v2.4.11
+    )
+    FetchContent_GetProperties(doc)
+endif()
 
 FetchContent_GetProperties(tb)
 if(NOT tb_POPULATED)
@@ -74,7 +83,11 @@ if(USE_FMT)
     message(STATUS "FMT     =>  Downloaded")
     FetchContent_MakeAvailable(fmt)
 endif()
-message(STATUS "TB      =>  Downloaded")
+if(BUILD_TESTS)
+    message(STATUS "DocTest  =>  Downloaded")
+    FetchContent_MakeAvailable(doc)
+endif()
+message(STATUS "TigerBeetle  =>  Downloaded")
 FetchContent_MakeAvailable(tb)
 message(STATUS "-----------------------------------------")
 
