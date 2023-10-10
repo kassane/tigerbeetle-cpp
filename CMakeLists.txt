@@ -77,10 +77,17 @@ if(BUILD_TESTS)
             target_link_options(${app} PRIVATE -fsanitize=thread)
         endif()
 
-        target_link_libraries(${app}
-            PUBLIC TigerBeetle::TigerBeetle
-            PRIVATE Threads::Threads ${WIN_LIBS} doctest::doctest
-        )
+        if(USE_FMT)
+            target_link_libraries(${app}
+                PUBLIC TigerBeetle::TigerBeetle
+                PRIVATE Threads::Threads fmt::fmt ${WIN_LIBS} doctest::doctest
+            )
+        else()
+            target_link_libraries(${app}
+                PUBLIC TigerBeetle::TigerBeetle
+                PRIVATE Threads::Threads ${WIN_LIBS} doctest::doctest
+            )
+        endif()
     endforeach()
 endif()
 
