@@ -4,7 +4,7 @@ if(${CMAKE_VERSION} VERSION_LESS 3.14)
     cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
 endif()
 
-project(tb_cpp VERSION 0.3.0 LANGUAGES CXX)
+project(TigerbeetleCpp VERSION 0.3.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -14,7 +14,6 @@ if(NOT CMAKE_BUILD_TYPE)
 elseif(NOT CMAKE_BUILD_TYPE STREQUAL Debug)
     set(CMAKE_CONFIGURATION_TYPES "Release")
 endif()
-
 option(RUN_INSTALL_ZIG "Run zig install (build tigerbeeble library)" ON)
 option(BUILD_TB_C_CLIENT "Build c_client library with Zig" ON)
 option(BUILD_EXAMPLES "Build client examples" OFF)
@@ -24,10 +23,18 @@ option(USE_FMT "Build with Fmt logger" OFF)
 option(ENABLE_ASAN "Build with AddressSanitizer" OFF)
 option(ENABLE_TSAN "Build with ThreadSanitizer" OFF)
 
+if(BUILD_EXAMPLES)
+    # Define the list of target names
+    set(APP_TARGETS
+        basic
+        two_phase
+        two_phase_many
+    )
+endif()
+
 include(FeatureSummary)
 include(cmake/deps.cmake)
 include(cmake/FindTigerBeetle.cmake)
-find_package(Threads REQUIRED)
 
 if(WIN32)
     set(WIN_LIBS ntdll ws2_32 wsock32 mswsock)
@@ -39,65 +46,39 @@ if(USE_FMT)
     add_compile_definitions(-DUSE_FMT)
 endif()
 if(BUILD_EXAMPLES)
-    add_executable(basic_example
-        "examples/basic.cpp"
-    )
-    add_executable(two_phase_example
-        "examples/two_phase.cpp"
-    )
-    add_executable(multiple_two_phase_example
-        "examples/two_phase_many.cpp"
-    )
+    find_package(Threads REQUIRED)
 
-    if(ENABLE_ASAN)
-        target_compile_options(basic_example PRIVATE -fsanitize=address -fsanitize=undefined)
-        target_link_options(basic_example PRIVATE -fsanitize=address -fsanitize=undefined)
-        target_compile_options(two_phase_example PRIVATE -fsanitize=address -fsanitize=undefined)
-        target_link_options(two_phase_example PRIVATE -fsanitize=address -fsanitize=undefined)
-        target_compile_options(multiple_two_phase_example PRIVATE -fsanitize=address -fsanitize=undefined)
-        target_link_options(multiple_two_phase_example PRIVATE -fsanitize=address -fsanitize=undefined)
-    endif()
+    foreach(app ${APP_TARGETS})
+        # Add the source file for each target
+        add_executable(${app} "examples/${app}.cpp")
 
-    if(ENABLE_TSAN)
-        target_compile_options(basic_example PRIVATE -fsanitize=thread)
-        target_link_options(basic_example PRIVATE -fsanitize=thread)
-        target_compile_options(two_phase_example PRIVATE -fsanitize=thread)
-        target_link_options(two_phase_example PRIVATE -fsanitize=thread)
-        target_compile_options(multiple_two_phase_example PRIVATE -fsanitize=thread)
-        target_link_options(multiple_two_phase_example PRIVATE -fsanitize=thread)
-    endif()
+        # Set common compile options for all targets
+        target_compile_options(${app} PRIVATE
+            -Wall -Wextra -Werror -Wshadow -Wpedantic
+        )
 
-    target_compile_options(basic_example PRIVATE -Wall -Wextra -Werror -Wshadow -Wpedantic)
-    target_compile_options(two_phase_example PRIVATE -Wall -Wextra -Werror -Wshadow -Wpedantic)
-    target_compile_options(multiple_two_phase_example PRIVATE -Wall -Wextra -Werror -Wshadow -Wpedantic)
+        if(ENABLE_ASAN)
+            target_compile_options(${app} PRIVATE -fsanitize=address -fsanitize=undefined)
+            target_link_options(${app} PRIVATE -fsanitize=address -fsanitize=undefined)
+        endif()
 
-    if(USE_FMT)
-        target_link_libraries(basic_example
-            PUBLIC TigerBeetle::TigerBeetle
-            PRIVATE Threads::Threads fmt::fmt ${WIN_LIBS}
-        )
-        target_link_libraries(two_phase_example
-            PUBLIC TigerBeetle::TigerBeetle
-            PRIVATE Threads::Threads fmt::fmt ${WIN_LIBS}
-        )
-        target_link_libraries(multiple_two_phase_example
-            PUBLIC TigerBeetle::TigerBeetle
-            PRIVATE Threads::Threads fmt::fmt ${WIN_LIBS}
-        )
-    else()
-        target_link_libraries(basic_example
-            PUBLIC TigerBeetle::TigerBeetle
-            PRIVATE Threads::Threads ${WIN_LIBS}
-        )
-        target_link_libraries(two_phase_example
-            PUBLIC TigerBeetle::TigerBeetle
-            PRIVATE Threads::Threads ${WIN_LIBS}
-        )
-        target_link_libraries(multiple_two_phase_example
-            PUBLIC TigerBeetle::TigerBeetle
-            PRIVATE Threads::Threads ${WIN_LIBS}
-        )
-    endif()
+        if(ENABLE_TSAN)
+            target_compile_options(${app} PRIVATE -fsanitize=thread)
+            target_link_options(${app} PRIVATE -fsanitize=thread)
+        endif()
+
+        if(USE_FMT)
+            target_link_libraries(${app}
+                PUBLIC TigerBeetle::TigerBeetle
+                PRIVATE Threads::Threads fmt::fmt ${WIN_LIBS}
+            )
+        else()
+            target_link_libraries(${app}
+                PUBLIC TigerBeetle::TigerBeetle
+                PRIVATE Threads::Threads ${WIN_LIBS}
+            )
+        endif()
+    endforeach()
 endif()
 
 file(
