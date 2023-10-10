@@ -24,7 +24,7 @@ $> cmake -B build # (tb_client.[a|lib])
 # OR
 $> cmake -B build -DTIGERBEETLE_BUILD_SHARED_LIBS=ON # (tb_client.[so|dll|dylib])
 # Build and test - build client examples
-$> cmake --build build -DBUILD_EXAMPLES=ON --target run_with_tb # run TigerBeetle server + C++ client 
+$> cmake --build build -DBUILD_EXAMPLES=ON --target run_with_tb # run TigerBeetle server + your client 
 ```
 
 **Zig toolchain**
@@ -48,7 +48,11 @@ if (NOT TigerBeetle_FOUND)
     FetchContent_Declare(TigerBeetle GIT_REPOSITORY https://github.com/kassane/tigerbeetle-cpp.git
         GIT_TAG main)
     FetchContent_GetProperties(TigerBeetle)
-    set(APP_TARGETS ${PROJECT_NAME})
+# required
+    set(APP_TARGETS ${PROJECT_NAME}) # executable or executables (need foreach) names
+# optional
+#   set(TB_VERSION 0.13.137) # tigerbeetle branch/tag repo (default: main)
+#   set(TB_ADDRESS 3000) # tb_server port (default: 3001)
     FetchContent_MakeAvailable(TigerBeetle)
 endif()
 
@@ -138,6 +142,11 @@ However, as mentioned in issue [#3](https://github.com/kassane/tigerbeetle-cpp/i
 - [undefined reference to `__zig_probe_stack`](https://github.com/tigerbeetledb/tigerbeetle/pull/792) - **Fixed**.
 
 It is also not limited to C++, you just need to modify the `CMakeLists.txt` to use it with other languages supported by CMake.
+
+> :information_source: CMake: Supported languages are C, CXX (i.e. C++), CSharp (i.e. C#), CUDA, OBJC (i.e. Objective-C), OBJCXX (i.e. Objective-C++), Fortran, HIP, ISPC, Swift, ASM, ASM_NASM, ASM_MARMASM, ASM_MASM, and ASM-ATT.
+
+**See:** [cmake docs](https://cmake.org/cmake/help/latest/command/enable_language.html)
+
 
 #### Is this project an official binding for TigerBeetleDB?
 

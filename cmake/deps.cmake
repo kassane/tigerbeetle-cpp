@@ -42,11 +42,15 @@ if(NOT COMMAND FetchContent_Populate)
 endif()
 set(FETCHCONTENT_QUIET FALSE)
 
+if(NOT TB_VERSION)
+    set(TB_VERSION main)
+endif()
+
 message(STATUS "TigerBeetle    =>  Downloading")
 FetchContent_Declare(
     tb
     GIT_REPOSITORY "https://github.com/tigerbeetledb/tigerbeetle.git"
-    GIT_TAG main
+    GIT_TAG ${TB_VERSION}
 )
 if(USE_FMT)
     message(STATUS "-----------------------------------------")
