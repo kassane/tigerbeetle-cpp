@@ -55,6 +55,8 @@ fn buildExe(b: *std.Build, info: BuildInfo) void {
         "-Werror",
         "-Wpedantic",
         "-Wshadow",
+        "-fexperimental-library",
+        "-std=c++20",
     } });
 
     // Dependencies
