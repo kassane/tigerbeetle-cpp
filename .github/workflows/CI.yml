@@ -14,7 +14,7 @@ jobs:
         runs-on: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.runs-on }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
@@ -29,7 +29,10 @@ jobs:
         run: cmake -B build -DUSE_FMT=ON -DBUILD_EXAMPLES=ON -DBUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release
 
       - name: CMake - Build C++ client
-        run: cmake --build build --target run_with_tb
+        run: |
+            cmake --build build --parallel && \
+            cmake --build build --target testing && \
+            cmake --build build --target run_with_tb
 
       - name: Zig - Build C++ client
         run: zig build --summary all -freference-trace
@@ -44,7 +47,7 @@ jobs:
         - { sys: ucrt64,  env: ucrt-x86_64 } # ucrt + libstdc++
         - { sys: clang64, env: clang-x86_64 } # ucrt + libc++
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           path: temp
           submodules: recursive
@@ -68,13 +71,13 @@ jobs:
         shell: msys2 {0}
         run: |
             cd /C/_
-            cmake -B build -DUSE_FMT=ON -DBUILD_EXAMPLES=ON
+            cmake -B build -DUSE_FMT=ON -DBUILD_TESTS=ON -DBUILD_EXAMPLES=ON
       
       - name: CMake - Build C++ client
         shell: msys2 {0}
         run: |
             cd /C/_
-            cmake --build build --parallel
+            cmake --build build --parallel && cmake --build build --target testing
 
       - name: Zig - Build C++ client
         shell: msys2 {0}

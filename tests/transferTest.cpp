@@ -74,22 +74,24 @@ TEST_CASE("Transfer Test") {
     REQUIRE(transfers.size() == 1);
 
     // Set up transfer details with limits
-    transfers.at(0).id = static_cast<tigerbeetle::tb_uint128_t>(std::numeric_limits<tigerbeetle::tb_uint128_t>::max()) + 1;
+    transfers.at(0).id =
+        std::numeric_limits<tigerbeetle::tb_uint128_t>::max() + 1;
     transfers.at(0).debit_account_id =
-        static_cast<tigerbeetle::tb_uint128_t>(std::numeric_limits<tigerbeetle::tb_uint128_t>::max()) + 1;
+        std::numeric_limits<tigerbeetle::tb_uint128_t>::max() + 1;
     transfers.at(0).credit_account_id =
-        static_cast<tigerbeetle::tb_uint128_t>(std::numeric_limits<tigerbeetle::tb_uint128_t>::max()) + 1;
+        std::numeric_limits<tigerbeetle::tb_uint128_t>::max() + 1;
     transfers.at(0).amount =
-        static_cast<tigerbeetle::tb_uint128_t>(std::numeric_limits<tigerbeetle::tb_uint128_t>::max()) + 1;
+        std::numeric_limits<tigerbeetle::tb_uint128_t>::max() + 1;
 
     // Check transfer details
-    REQUIRE(transfers.at(0).id == static_cast<tigerbeetle::tb_uint128_t>(std::numeric_limits<tigerbeetle::tb_uint128_t>::max()) + 1);
+    REQUIRE(transfers.at(0).id ==
+            std::numeric_limits<tigerbeetle::tb_uint128_t>::max() + 1);
     REQUIRE(transfers.at(0).debit_account_id ==
-            static_cast<tigerbeetle::tb_uint128_t>(std::numeric_limits<tigerbeetle::tb_uint128_t>::max()) + 1);
+            std::numeric_limits<tigerbeetle::tb_uint128_t>::max() + 1);
     REQUIRE(transfers.at(0).credit_account_id ==
-            static_cast<tigerbeetle::tb_uint128_t>(std::numeric_limits<tigerbeetle::tb_uint128_t>::max()) + 1);
+            std::numeric_limits<tigerbeetle::tb_uint128_t>::max() + 1);
     REQUIRE(transfers.at(0).amount ==
-            static_cast<tigerbeetle::tb_uint128_t>(std::numeric_limits<tigerbeetle::tb_uint128_t>::max()) + 1);
+            std::numeric_limits<tigerbeetle::tb_uint128_t>::max() + 1);
 
     // Limit tests
     REQUIRE(transfers.at(0).id <=
@@ -98,6 +100,7 @@ TEST_CASE("Transfer Test") {
             std::numeric_limits<tigerbeetle::tb_uint128_t>::max());
     REQUIRE(transfers.at(0).credit_account_id <=
             std::numeric_limits<tigerbeetle::tb_uint128_t>::max());
-    REQUIRE(transfers.at(0).amount <= std::numeric_limits<tigerbeetle::tb_uint128_t>::max());
+    REQUIRE(transfers.at(0).amount <=
+            std::numeric_limits<tigerbeetle::tb_uint128_t>::max());
   }
 }
