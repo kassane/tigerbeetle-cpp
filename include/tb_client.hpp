@@ -20,24 +20,56 @@ a source language processor.
 
 #pragma once
 #include <array>
+#include <cstdint>
 #ifdef USE_FMT
 #include <fmt/color.h>
 #include <fmt/core.h>
 #endif
+#include <concepts>
 #include <memory>
 #include <mutex>
 #include <stdexcept>
 
 namespace tigerbeetle {
+
 #include <tb_client.h>
+
+using tb_uint32_t = std::uint32_t;
+using tb_uint64_t = std::uint64_t;
+template <typename T>
+concept tb_same =
+    std::is_same_v<T, tb_uint128_t> || std::is_same_v<T, tb_transfer_t> ||
+    std::is_same_v<T, tb_account_t>;
+
+template <typename T>
+concept tb_integral =
+    std::is_integral_v<T> && sizeof(T) == sizeof(tb_uint128_t);
 
 constexpr size_t MAX_MESSAGE_SIZE = (1024 * 1024) - 128;
 template <std::size_t N> using accountID = std::array<tb_uint128_t, N>;
 template <std::size_t N> using transferID = std::array<tb_uint128_t, N>;
 template <std::size_t N> using transfer = std::array<tb_transfer_t, N>;
 template <std::size_t N> using account = std::array<tb_account_t, N>;
-template <std::size_t N> auto make_account() { return account<N>{}; }
-template <std::size_t N> auto make_transfer() { return transfer<N>{}; }
+
+template <std::size_t N>
+concept AccountID = requires { typename accountID<N>; };
+template <std::size_t N>
+concept TransferID = requires { typename transferID<N>; };
+template <std::size_t N>
+concept TransferArray = requires { typename transfer<N>; };
+template <std::size_t N>
+concept AccountArray = requires { typename account<N>; };
+template <std::size_t N>
+  requires AccountID<N>
+auto make_account() {
+  return account<N>{};
+}
+template <std::size_t N>
+  requires TransferArray<N>
+auto make_transfer() {
+  return transfer<N>{};
+}
+
 // Synchronization context between the callback and the main thread.
 struct CompletionContext {
   std::array<uint8_t, MAX_MESSAGE_SIZE> reply;
@@ -48,8 +80,8 @@ struct CompletionContext {
 
 class Client {
 public:
-  Client(uint32_t cluster_id, const std::string address, uint32_t packets_count,
-         uintptr_t on_completion_ctx,
+  Client(uint32_t cluster_id, const std::string &address,
+         uint32_t packets_count, uintptr_t on_completion_ctx,
          void (*on_completion_fn)(uintptr_t, tb_client_t, tb_packet_t *,
                                   const uint8_t *, uint32_t))
       : client(nullptr) {
@@ -64,11 +96,9 @@ public:
   Client(const Client &) = delete;
   Client &operator=(const Client &) = delete;
 
-  Client(Client &&other) noexcept : client(nullptr) {
-    std::swap(client, other.client);
-  }
+  Client(Client &&other) : client(nullptr) { std::swap(client, other.client); }
 
-  Client &operator=(Client &&other) noexcept {
+  Client &operator=(Client &&other) {
     if (this != &other) {
       destroy();
       std::swap(client, other.client);
@@ -76,15 +106,18 @@ public:
     return *this;
   }
 
-  ~Client() noexcept { destroy(); }
+  ~Client() { destroy(); }
 
   tb_client_t get() const { return client; }
+
   TB_PACKET_ACQUIRE_STATUS acquire_packet(tb_packet_t **packet) const {
     return tb_client_acquire_packet(client, packet);
   }
+
   void release_packet(tb_packet_t **packet) {
     tb_client_release_packet(client, *packet);
   }
+
   void send_request(tb_packet_t *packet, CompletionContext *ctx) {
     // Submits the request asynchronously:
     ctx->completed = false;
@@ -108,6 +141,7 @@ private:
       client = nullptr;
     }
   }
+
   tb_client_t client;
 };
 

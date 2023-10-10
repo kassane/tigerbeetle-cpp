@@ -4,13 +4,14 @@ if(${CMAKE_VERSION} VERSION_LESS 3.14)
     cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
 endif()
 
-project(TigerbeetleCpp VERSION 0.3.0 LANGUAGES CXX)
+project(TigerbeetleCpp VERSION 0.3.1 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Choose default type of build (Debug)" FORCE)
+    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 elseif(NOT CMAKE_BUILD_TYPE STREQUAL Debug)
     set(CMAKE_CONFIGURATION_TYPES "Release")
 else()
@@ -57,40 +58,6 @@ if(USE_FMT)
     add_compile_definitions(-DUSE_FMT)
 endif()
 
-if(BUILD_TESTS)
-    foreach(app ${APP_TESTS})
-        # Add the source file for each target
-        add_executable(${app} "tests/${app}.cpp")
-
-        # Set common compile options for all targets
-        target_compile_options(${app} PRIVATE
-            -Wall -Wextra -Werror -Wshadow -Wpedantic
-        )
-
-        if(ENABLE_ASAN)
-            target_compile_options(${app} PRIVATE -fsanitize=leak,address,undefined)
-            target_link_options(${app} PRIVATE -fsanitize=leak,address,undefined)
-        endif()
-
-        if(ENABLE_TSAN)
-            target_compile_options(${app} PRIVATE -fsanitize=thread)
-            target_link_options(${app} PRIVATE -fsanitize=thread)
-        endif()
-
-        if(USE_FMT)
-            target_link_libraries(${app}
-                PUBLIC TigerBeetle::TigerBeetle
-                PRIVATE Threads::Threads fmt::fmt ${WIN_LIBS} doctest::doctest
-            )
-        else()
-            target_link_libraries(${app}
-                PUBLIC TigerBeetle::TigerBeetle
-                PRIVATE Threads::Threads ${WIN_LIBS} doctest::doctest
-            )
-        endif()
-    endforeach()
-endif()
-
 if(BUILD_EXAMPLES)
     foreach(app ${APP_TARGETS})
         # Add the source file for each target
@@ -120,6 +87,40 @@ if(BUILD_EXAMPLES)
             target_link_libraries(${app}
                 PUBLIC TigerBeetle::TigerBeetle
                 PRIVATE Threads::Threads ${WIN_LIBS}
+            )
+        endif()
+    endforeach()
+endif()
+
+if(BUILD_TESTS)
+    foreach(app ${APP_TESTS})
+        # Add the source file for each target
+        add_executable(${app} "tests/${app}.cpp")
+
+        # Set common compile options for all targets
+        target_compile_options(${app} PRIVATE
+            -Wall -Wextra -Werror -Wshadow -Wpedantic
+        )
+
+        if(ENABLE_ASAN)
+            target_compile_options(${app} PRIVATE -fsanitize=leak,address,undefined)
+            target_link_options(${app} PRIVATE -fsanitize=leak,address,undefined)
+        endif()
+
+        if(ENABLE_TSAN)
+            target_compile_options(${app} PRIVATE -fsanitize=thread)
+            target_link_options(${app} PRIVATE -fsanitize=thread)
+        endif()
+
+        if(USE_FMT)
+            target_link_libraries(${app}
+                PUBLIC TigerBeetle::TigerBeetle
+                PRIVATE Threads::Threads fmt::fmt ${WIN_LIBS} doctest::doctest
+            )
+        else()
+            target_link_libraries(${app}
+                PUBLIC TigerBeetle::TigerBeetle
+                PRIVATE Threads::Threads ${WIN_LIBS} doctest::doctest
             )
         endif()
     endforeach()

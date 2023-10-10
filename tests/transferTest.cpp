@@ -103,4 +103,15 @@ TEST_CASE("Transfer Test") {
     REQUIRE(transfers.at(0).amount <=
             std::numeric_limits<tigerbeetle::tb_uint128_t>::max());
   }
+
+  SUBCASE("Concept tb types") {
+    static_assert(tigerbeetle::tb_integral<tigerbeetle::tb_uint128_t>,
+                  "tb_uint128_t is TBInteger");
+    //     static_assert(tigerbeetle::tb_integral<tigerbeetle::tb_transfer_t>,
+    //     "tb_transfer_t is not a TBInteger"); // get compile time error
+    static_assert(tigerbeetle::tb_same<tigerbeetle::tb_account_t>,
+                  "tb_account_t is not a TBInteger");
+    static_assert(tigerbeetle::tb_same<tigerbeetle::tb_transfer_t>,
+                  "tb_transfer_t is not a TBInteger");
+  }
 }
