@@ -2,7 +2,9 @@ name: Build
 
 on:
   push:
+    branches: [ 'main' ]
   pull_request:
+    branches: [ 'main' ]
   schedule:
     - cron: '13 8 * * 0'
 
@@ -26,7 +28,7 @@ jobs:
           cmakeVersion: latest
 
       - name: CMake - Configure
-        run: cmake -B build -DUSE_FMT=ON -DBUILD_EXAMPLES=ON -DBUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B build -DUSE_FMT=ON -DBUILD_EXAMPLES=ON -DBUILD_TESTS=ON #-DCMAKE_BUILD_TYPE=Release
 
       - name: CMake - Build C++ client
         run: |

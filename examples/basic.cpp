@@ -27,6 +27,11 @@ auto main() -> int {
       tb::on_completion // Completion callback.
   );
 
+  if (client.currentStatus() != tb::TB_STATUS_SUCCESS) {
+    log.error("Failed to initialize tb_client");
+    return -1;
+  }
+
   tb::CompletionContext ctx{};
   tb::tb_packet_t *packet = nullptr;
 

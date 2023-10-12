@@ -22,6 +22,11 @@ int main() {
         tb::on_completion // Completion callback.
     );
 
+    if (client.currentStatus() != tb::TB_STATUS_SUCCESS) {
+      log.error("Failed to initialize tb_client");
+      return -1;
+    }
+
     // Create two accounts
     tb::account<2> accounts;
 

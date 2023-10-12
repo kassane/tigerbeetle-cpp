@@ -23,9 +23,8 @@ a source language processor.
 #include <array>
 #include <concepts>
 #include <cstdint>
-#include <memory>
 #include <mutex>
-#include <stdexcept>
+#include <string>
 
 namespace tigerbeetle {
 
@@ -82,12 +81,9 @@ public:
          void (*on_completion_fn)(uintptr_t, tb_client_t, tb_packet_t *,
                                   const uint8_t *, uint32_t))
       : client(nullptr) {
-    TB_STATUS status =
+    status =
         tb_client_init(&client, cluster_id, address.c_str(), address.length(),
                        packets_count, on_completion_ctx, on_completion_fn);
-    if (status != TB_STATUS_SUCCESS) {
-      throw std::runtime_error("Failed to initialize tb_client");
-    }
   }
 
   Client(const Client &) = delete;
@@ -110,6 +106,8 @@ public:
   TB_PACKET_ACQUIRE_STATUS acquire_packet(tb_packet_t **packet) const {
     return tb_client_acquire_packet(client, packet);
   }
+
+  TB_STATUS currentStatus() { return status; };
 
   void release_packet(tb_packet_t **packet) {
     tb_client_release_packet(client, *packet);
@@ -140,6 +138,7 @@ private:
   }
 
   tb_client_t client;
+  TB_STATUS status;
 };
 
 inline void on_completion([[maybe_unused]] uintptr_t context,
@@ -155,5 +154,5 @@ inline void on_completion([[maybe_unused]] uintptr_t context,
     ctx->completed = true;
   }
 }
-}
+} // namespace tigerbeetle
 #endif // TB_CLIENT_HPP
