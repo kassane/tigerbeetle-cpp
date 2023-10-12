@@ -19,6 +19,9 @@ a source language processor.
 */
 
 #ifdef USE_FMT
+#ifndef TB_LOGGER_HPP
+#define TB_LOGGER_HPP
+
 #include <fmt/color.h>
 #include <fmt/core.h>
 
@@ -90,4 +93,5 @@ private:
   }
 };
 } // namespace tigerbeetle
-#endif
+#endif // TB_LOGGER_HPP
+#endif // USE_FMT
