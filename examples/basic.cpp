@@ -2,6 +2,7 @@
 #include <chrono>
 #include <cstddef>
 #include <tb_client.hpp>
+#include <tb_logger.hpp>
 
 namespace tb = tigerbeetle;
 
@@ -25,6 +26,11 @@ auto main() -> int {
       0,  // No need for a global context.
       tb::on_completion // Completion callback.
   );
+
+  if (client.currentStatus() != tb::TB_STATUS_SUCCESS) {
+    log.error("Failed to initialize tb_client");
+    return -1;
+  }
 
   tb::CompletionContext ctx{};
   tb::tb_packet_t *packet = nullptr;

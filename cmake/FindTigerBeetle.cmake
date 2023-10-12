@@ -164,13 +164,17 @@ add_custom_target(run_with_tb
     DEPENDS ${APP_TARGETS}
     WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
 )
+add_custom_target(testing
+    DEPENDS ${APP_TESTS}
+    WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
+)
 
 if(NOT TB_ADDRESS)
     set(TB_ADDRESS 3001)
 endif()
 
 # Add a post-build event to run each target and perform other tasks
-if(NOT APP_TARGETS)
+if(NOT DEFINED APP_TARGETS)
     message(FATAL_ERROR "Missing application to running!!")
 else()
     foreach(app ${APP_TARGETS})
@@ -181,6 +185,18 @@ else()
             COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Terminating tigerbeetle start process for ${app}..."
             WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
             COMMENT "Running ${app} with TigerBeetle"
+        )
+    endforeach()
+endif()
+if(BUILD_TESTS)
+    foreach(app ${APP_TESTS})
+        add_custom_command(TARGET testing POST_BUILD
+            COMMAND ${CMAKE_BINARY_DIR}/${app}
+            COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Killing tigerbeetle start process for ${app}..."
+            COMMAND ${CMAKE_COMMAND} -E sleep 2 # Delay to ensure ${app} has started
+            COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Terminating tigerbeetle start process for ${app}..."
+            WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
+            COMMENT "Running ${app}"
         )
     endforeach()
 endif()

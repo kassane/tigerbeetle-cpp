@@ -4,7 +4,7 @@
 
 ### Prerequisites
 
- C++ version: 17
+ C++ version: 20
 
 **Libraries**
 - fmtlib v10.1.1
@@ -43,7 +43,7 @@ $> cmake -B build -DCMAKE_CXX_COMPILER=scripts/zigcxx.cmd
 ```cmake
 include(FetchContent)
 
-find_package(TigerBeetle 0.3.0 QUIET)
+find_package(TigerBeetle 0.3.1 QUIET)
 if (NOT TigerBeetle_FOUND)
     FetchContent_Declare(TigerBeetle GIT_REPOSITORY https://github.com/kassane/tigerbeetle-cpp.git
         GIT_TAG main)

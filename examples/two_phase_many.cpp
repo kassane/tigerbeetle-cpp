@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cassert>
 #include <tb_client.hpp>
+#include <tb_logger.hpp>
 
 namespace tb = tigerbeetle;
 
@@ -20,6 +21,11 @@ int main() {
         0,  // No need for a global context.
         tb::on_completion // Completion callback.
     );
+
+    if (client.currentStatus() != tb::TB_STATUS_SUCCESS) {
+      log.error("Failed to initialize tb_client");
+      return -1;
+    }
 
     // Create two accounts
     tb::account<2> accounts;

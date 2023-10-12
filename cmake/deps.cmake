@@ -46,12 +46,19 @@ if(NOT TB_VERSION)
     set(TB_VERSION main)
 endif()
 
-message(STATUS "TB      =>  Downloading")
+message(STATUS "TigerBeetle    =>  Downloading")
 FetchContent_Declare(
     tb
     GIT_REPOSITORY "https://github.com/tigerbeetledb/tigerbeetle.git"
     GIT_TAG ${TB_VERSION}
 )
+
+FetchContent_GetProperties(tb)
+if(NOT tb_POPULATED)
+    FetchContent_Populate(tb)
+endif()
+set(TB_PATH ${tb_SOURCE_DIR})
+
 if(USE_FMT)
     message(STATUS "-----------------------------------------")
     message(STATUS "FMT     =>  Downloading")
@@ -67,18 +74,26 @@ if(USE_FMT)
     set(FMT_PATH ${fmt_SOURCE_DIR})
 endif()
 
-FetchContent_GetProperties(tb)
-if(NOT tb_POPULATED)
-    FetchContent_Populate(tb)
+if(BUILD_TESTS)
+    message(STATUS "Doctest   =>  Downloading")
+    FetchContent_Declare(
+        doc
+        GIT_REPOSITORY "https://github.com/doctest/doctest.git"
+        GIT_TAG v2.4.11
+    )
+    FetchContent_GetProperties(doc)
 endif()
-set(TB_PATH ${tb_SOURCE_DIR})
 
 message(STATUS "-----------------------------------------")
 if(USE_FMT)
     message(STATUS "FMT     =>  Downloaded")
     FetchContent_MakeAvailable(fmt)
 endif()
-message(STATUS "TB      =>  Downloaded")
+if(BUILD_TESTS)
+    message(STATUS "DocTest  =>  Downloaded")
+    FetchContent_MakeAvailable(doc)
+endif()
+message(STATUS "TigerBeetle  =>  Downloaded")
 FetchContent_MakeAvailable(tb)
 message(STATUS "-----------------------------------------")
 
