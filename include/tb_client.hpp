@@ -20,12 +20,8 @@ a source language processor.
 
 #pragma once
 #include <array>
-#include <cstdint>
-#ifdef USE_FMT
-#include <fmt/color.h>
-#include <fmt/core.h>
-#endif
 #include <concepts>
+#include <cstdint>
 #include <memory>
 #include <mutex>
 #include <stdexcept>
@@ -158,72 +154,3 @@ inline void on_completion([[maybe_unused]] uintptr_t context,
     ctx->completed = true;
   }
 }
-
-#ifdef USE_FMT
-enum class LogLevel {
-  INFO,
-  DEBUG,
-  ERROR,
-  WARN,
-  TRACE,
-};
-
-class Logger {
-public:
-  static void warn(const std::string &message) {
-    println(LogLevel::WARN, message);
-  }
-  static void trace(const std::string &message) {
-    println(LogLevel::TRACE, message);
-  }
-  static void debug(const std::string &message) {
-    println(LogLevel::DEBUG, message);
-  }
-  static void info(const std::string &message) {
-    println(LogLevel::INFO, message);
-  }
-  static void error(const std::string &message) {
-    println(LogLevel::ERROR, message);
-  }
-
-private:
-  static fmt::color getLogLevelColor(LogLevel level) {
-    switch (level) {
-    case LogLevel::INFO:
-      return fmt::color::green;
-    case LogLevel::DEBUG:
-      return fmt::color::cyan;
-    case LogLevel::ERROR:
-      return fmt::color::red;
-    case LogLevel::WARN:
-      return fmt::color::yellow;
-    case LogLevel::TRACE:
-      return fmt::color::white;
-    }
-    return static_cast<fmt::color>(
-        0x000000); // Default color if the level is unknown
-  }
-
-  static void println(LogLevel level, const std::string &message) {
-    fmt::color color = getLogLevelColor(level);
-    fmt::print(fg(color), "[{}] {}\n", getLogLevelString(level), message);
-  }
-
-  static std::string getLogLevelString(LogLevel level) {
-    switch (level) {
-    case LogLevel::INFO:
-      return "info";
-    case LogLevel::DEBUG:
-      return "debug";
-    case LogLevel::ERROR:
-      return "error";
-    case LogLevel::WARN:
-      return "warn";
-    case LogLevel::TRACE:
-      return "trace";
-    }
-    return "unknown"; // Default log level if unknown
-  }
-};
-#endif
-} // namespace tigerbeetle
