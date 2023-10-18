@@ -4,7 +4,7 @@ if(${CMAKE_VERSION} VERSION_LESS 3.14)
     cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
 endif()
 
-project(TigerbeetleCpp VERSION 0.3.1 LANGUAGES CXX)
+project(TigerBeetleCpp VERSION 0.3.1 LANGUAGES CXX DESCRIPTION "TigerBeetle Client library")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -44,6 +44,7 @@ if(BUILD_TESTS)
 endif()
 
 include(FeatureSummary)
+include(CMakePackageConfigHelpers)
 include(cmake/deps.cmake)
 include(cmake/FindTigerBeetle.cmake)
 find_package(Threads REQUIRED)
@@ -112,17 +113,10 @@ if(BUILD_TESTS)
             target_link_options(${app} PRIVATE -fsanitize=thread)
         endif()
 
-        if(USE_FMT)
-            target_link_libraries(${app}
-                PUBLIC TigerBeetle::TigerBeetle
-                PRIVATE Threads::Threads fmt::fmt ${WIN_LIBS} doctest::doctest
-            )
-        else()
-            target_link_libraries(${app}
-                PUBLIC TigerBeetle::TigerBeetle
-                PRIVATE Threads::Threads ${WIN_LIBS} doctest::doctest
-            )
-        endif()
+        target_link_libraries(${app}
+            PUBLIC TigerBeetle::TigerBeetle
+            PRIVATE Threads::Threads ${WIN_LIBS} doctest::doctest
+        )
     endforeach()
 endif()
 
@@ -134,4 +128,34 @@ Checks: '-*,llvm-twine-local'
 ...
 "
 )
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/TigerBeetle.pc.in
+    TigerBeetle.pc
+    @ONLY
+)
+
+install(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/TigerBeetle.pc
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+)
+
+## CMake config files
+configure_package_config_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/TigerBeetleConfig.cmake.in
+    TigerBeetleConfig.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/TigerBeetle
+)
+write_basic_package_version_file(
+    TigerBeetleConfigVersion.cmake
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY AnyNewerVersion
+)
+
+install(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/TigerBeetleConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/TigerBeetleConfigVersion.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/TigerBeetle
+)
+
+export(PACKAGE TigerBeetle)
 feature_summary(WHAT ALL INCLUDE_QUIET_PACKAGES FATAL_ON_MISSING_REQUIRED_PACKAGES)

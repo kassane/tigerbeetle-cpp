@@ -1,0 +1,5 @@
+@PACKAGE_INIT@
+
+find_dependency(Threads)
+
+check_required_components(TigerBeetle)
