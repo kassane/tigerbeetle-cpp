@@ -50,7 +50,7 @@ pub fn run_many_with_tb(
     const port = map.get("TB_ADDRESS");
     const tb_addr = try std.fmt.allocPrint(allocator, "--addresses={s}", .{if (port) |p| p else "3001"});
 
-    var tb_fmt = try std.ChildProcess.run(.{
+    var tb_fmt = try std.ChildProcess.exec(.{
         .allocator = allocator,
         .argv = &.{ "../build/_deps/tb-src/zig-out/bin/tigerbeetle", "format", "--cluster=0", "--replica=0", "--replica-count=1", data_file },
         .cwd = cwd,
