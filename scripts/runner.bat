@@ -9,6 +9,5 @@ echo.
 echo running client...
 %ZIG% build run %ZIG_BUILD_TYPE% -- %CLIENT%
 echo.
-%ZIG% uninstall
 
 endlocal
