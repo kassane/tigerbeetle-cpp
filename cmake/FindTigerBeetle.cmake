@@ -167,7 +167,7 @@ if(NOT DEFINED APP_TARGETS)
 else()
     foreach(app ${APP_TARGETS})
         add_custom_command(TARGET run_with_tb POST_BUILD
-            COMMAND ${RUN_WITH_TB} ${CMAKE_BINARY_DIR}/${app} ${TB_ADDRESS}
+            COMMAND ${RUN_WITH_TB} ${BUILD_TB} ${ZIG_BUILD_TYPE} ${CMAKE_BINARY_DIR}/${app}
             COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Killing tigerbeetle start process for ${app}..."
             COMMAND ${CMAKE_COMMAND} -E sleep 2 # Delay to ensure ${app} has started
             COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Terminating tigerbeetle start process for ${app}..."
