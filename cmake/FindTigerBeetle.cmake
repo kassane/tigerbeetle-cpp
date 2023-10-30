@@ -55,14 +55,14 @@ else()
     set(ZIG_BUILD_TYPE "-Doptimize=ReleaseSafe")
     set(ZIG_CONFIG "-Dconfig=production")
 endif()
-
 if(WIN32)
-    set(BUILD_TB ${TIGERBEETLE_ROOT_DIR}/zig/zig.exe build)
+    set(ZIG ${TIGERBEETLE_ROOT_DIR}/zig/zig.exe)
     set(RUN_WITH_TB ${CMAKE_CURRENT_SOURCE_DIR}/scripts/runner.bat)
 else()
-    set(BUILD_TB ${TIGERBEETLE_ROOT_DIR}/zig/zig build)
+    set(ZIG ${TIGERBEETLE_ROOT_DIR}/zig/zig)
     set(RUN_WITH_TB ${CMAKE_CURRENT_SOURCE_DIR}/scripts/runner.sh)
 endif()
+set(BUILD_TB ${ZIG} build)
 
 if(BUILD_TB_C_CLIENT)
     # Build c_client with Zig
@@ -167,7 +167,7 @@ if(NOT DEFINED APP_TARGETS)
 else()
     foreach(app ${APP_TARGETS})
         add_custom_command(TARGET run_with_tb POST_BUILD
-            COMMAND ${RUN_WITH_TB} ${BUILD_TB} ${ZIG_BUILD_TYPE} ${CMAKE_BINARY_DIR}/${app}
+            COMMAND ${RUN_WITH_TB} ${ZIG} ${ZIG_BUILD_TYPE} ${CMAKE_BINARY_DIR}/${app}
             COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Killing tigerbeetle start process for ${app}..."
             COMMAND ${CMAKE_COMMAND} -E sleep 2 # Delay to ensure ${app} has started
             COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Terminating tigerbeetle start process for ${app}..."

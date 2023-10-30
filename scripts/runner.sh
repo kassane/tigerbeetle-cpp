@@ -8,6 +8,6 @@ CLIENT=$3
 
 echo ""
 echo "running client..."
-$ZIG run $ZIG_BUILD_TYPE -- $CLIENT
+$ZIG build run $ZIG_BUILD_TYPE -- $CLIENT
 echo ""
 $ZIG uninstall
