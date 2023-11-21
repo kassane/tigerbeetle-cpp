@@ -41,7 +41,7 @@ template <typename T>
 concept tb_integral =
     std::is_integral_v<T> && sizeof(T) == sizeof(tb_uint128_t);
 
-constexpr size_t MAX_MESSAGE_SIZE = (1024 * 1024) - 128;
+constexpr size_t MAX_MESSAGE_SIZE = (1024 * 1024) - 256;
 template <std::size_t N> using accountID = std::array<tb_uint128_t, N>;
 template <std::size_t N> using transferID = std::array<tb_uint128_t, N>;
 template <std::size_t N> using transfer = std::array<tb_transfer_t, N>;
