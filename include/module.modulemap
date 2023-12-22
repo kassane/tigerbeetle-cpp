@@ -1,8 +1,8 @@
-module Tigerbeetle {
+module TigerBeetle {
   header "tb_client.h"
 }
-module TigerbeetleCpp {
+module TigerBeetleCpp {
  header "tb_client.hpp"
  header "tb_logger.hpp"
- requires cplusplus
+ requires cplusplus20
 }

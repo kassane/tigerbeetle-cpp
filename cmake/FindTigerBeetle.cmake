@@ -52,7 +52,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(ZIG_BUILD_TYPE "")
     set(ZIG_CONFIG "-Dconfig=default")
 else()
-    set(ZIG_BUILD_TYPE "-Doptimize=Release")
+    set(ZIG_BUILD_TYPE "-Drelease")
     set(ZIG_CONFIG "-Dconfig=production")
 endif()
 
