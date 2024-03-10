@@ -32,7 +32,7 @@
 *.app
 
 /build/
-/zig-cache/
+zig-cache/
 /zig-out/
 /.vscode/
 /.cache/

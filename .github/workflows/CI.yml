@@ -79,7 +79,9 @@ jobs:
         shell: msys2 {0}
         run: |
             cd /C/_
-            cmake --build build --parallel && cmake --build build --target testing
+            cmake --build build --parallel && \
+            cmake --build build --target testing && \
+            cmake --build build --target run_with_tb
 
       - name: Zig - Build C++ client
         shell: msys2 {0}
