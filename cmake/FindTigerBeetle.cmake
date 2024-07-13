@@ -68,7 +68,7 @@ if(BUILD_TB_C_CLIENT)
     # Build c_client with Zig
     message(STATUS "Build c_client libraries with Zig")
     execute_process(
-        COMMAND ${BUILD_TB} c_client ${ZIG_BUILD_TYPE} ${ZIG_CONFIG}
+        COMMAND ${BUILD_TB} clients:c ${ZIG_BUILD_TYPE} ${ZIG_CONFIG}
         WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
         RESULT_VARIABLE BUILD_C_CLIENT_RESULT
     )
@@ -79,9 +79,9 @@ endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64")
-        set(TIGERBEETLE_LIBRARY_DIR ${TIGERBEETLE_ROOT_DIR}/src/clients/c/lib/aarch64-linux-gnu)
+        set(TIGERBEETLE_LIBRARY_DIR ${TIGERBEETLE_ROOT_DIR}/src/clients/c/lib/aarch64-linux-gnu.2.27)
     else()
-        set(TIGERBEETLE_LIBRARY_DIR ${TIGERBEETLE_ROOT_DIR}/src/clients/c/lib/x86_64-linux-gnu)
+        set(TIGERBEETLE_LIBRARY_DIR ${TIGERBEETLE_ROOT_DIR}/src/clients/c/lib/x86_64-linux-gnu.2.27)
     endif()
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64")
