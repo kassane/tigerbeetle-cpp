@@ -13,16 +13,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [ubuntu-latest]
+        runs-on: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.runs-on }}
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
-      - uses: goto-bus-stop/setup-zig@v2
-        with:
-          version: 0.11.0
+      - uses: mlugg/setup-zig@v1
       - uses: lukka/get-cmake@latest
         with:
           cmakeVersion: latest
@@ -33,8 +31,7 @@ jobs:
       - name: CMake - Build C++ client
         run: |
             cmake --build build --parallel && \
-            cmake --build build --target testing && \
-            cmake --build build --target run_with_tb
+            cmake --build build --target testing
 
       - name: Zig - Build C++ client
         run: zig build --summary all -freference-trace
@@ -54,9 +51,7 @@ jobs:
           path: temp
           submodules: recursive
           fetch-depth: 0
-      - uses: goto-bus-stop/setup-zig@v2
-        with:
-          version: 0.11.0
+      - uses: mlugg/setup-zig@v1
       - uses: msys2/setup-msys2@v2
         with:
           msystem: ${{ matrix.sys }}

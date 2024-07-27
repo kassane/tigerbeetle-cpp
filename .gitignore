@@ -31,11 +31,11 @@
 *.out
 *.app
 
-/build/
-/zig-cache/
-/zig-out/
-/.vscode/
-/.cache/
-/vendor/
+build/
+.zig-cache/
+zig-out/
+.vscode/
+.cache/
+vendor/
 *.tigerbeetle
 tb_client.h

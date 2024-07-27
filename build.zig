@@ -20,24 +20,15 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     const fmt = b.option(bool, "use_fmt", "Build with fmt logger") orelse true;
-    buildExe(b, .{
-        .filepath = "examples/basic.cpp",
-        .target = target,
-        .optimize = optimize,
-        .use_fmt = fmt,
-    });
-    buildExe(b, .{
-        .filepath = "examples/two_phase.cpp",
-        .target = target,
-        .optimize = optimize,
-        .use_fmt = fmt,
-    });
-    buildExe(b, .{
-        .filepath = "examples/two_phase_many.cpp",
-        .target = target,
-        .optimize = optimize,
-        .use_fmt = fmt,
-    });
+
+    inline for (&.{ "examples/basic.cpp", "examples/two_phase.cpp", "examples/two_phase_many.cpp" }) |filename| {
+        buildExe(b, .{
+            .filepath = filename,
+            .target = target,
+            .optimize = optimize,
+            .use_fmt = fmt,
+        });
+    }
 }
 
 fn buildExe(b: *std.Build, info: BuildInfo) void {
@@ -48,16 +39,19 @@ fn buildExe(b: *std.Build, info: BuildInfo) void {
     });
 
     // Pre-Building
-    exe.addIncludePath(Path.relative("include"));
-    exe.addCSourceFile(.{ .file = Path.relative(info.filepath), .flags = &.{
-        "-Wall",
-        "-Wextra",
-        "-Werror",
-        "-Wpedantic",
-        "-Wshadow",
-        "-fexperimental-library",
-        "-std=c++20",
-    } });
+    exe.addIncludePath(b.path("include"));
+    exe.addCSourceFile(.{
+        .file = b.path(info.filepath),
+        .flags = &.{
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-Wpedantic",
+            "-Wshadow",
+            "-fexperimental-library",
+            "-std=c++20",
+        },
+    });
 
     // Dependencies
 
@@ -75,30 +69,32 @@ fn buildExe(b: *std.Build, info: BuildInfo) void {
     // });
     // const libtb = libtb_dep.artifact("tigerbeetle");
 
-    exe.addIncludePath(Path.relative("build/_deps/tb-src/src/clients/c/lib/include"));
-    const arch: []const u8 = switch (info.target.getCpuArch()) {
+    exe.addIncludePath(b.path("build/_deps/tb-src/src/clients/c/lib/include"));
+    const arch: []const u8 = switch (exe.rootModuleTarget().cpu.arch) {
         .aarch64 => "aarch64",
         else => "x86_64",
     };
-    const abi: []const u8 = switch (info.target.getAbi()) {
-        .gnu => "gnu",
+    const abi: []const u8 = switch (exe.rootModuleTarget().abi) {
+        .gnu => "gnu.2.27",
         else => "musl",
     };
-    const os: []const u8 = switch (info.target.getOsTag()) {
+    const os: []const u8 = switch (exe.rootModuleTarget().os.tag) {
         .windows => "windows",
         .macos => "macos",
         else => b.fmt("linux-{s}", .{abi}),
     };
 
     // Linking libraries
-    exe.addLibraryPath(Path.relative(b.fmt("build/_deps/tb-src/src/clients/c/lib/{s}-{s}", .{ arch, os })));
-    exe.linkSystemLibraryName("tb_client");
-    if (info.target.isWindows())
+    exe.addLibraryPath(b.path(b.fmt("build/_deps/tb-src/src/clients/c/lib/{s}-{s}", .{ arch, os })));
+    exe.linkSystemLibrary2("tb_client", .{
+        .use_pkg_config = .no,
+    });
+    if (exe.rootModuleTarget().os.tag == .windows)
         exe.linkSystemLibrary("ws2_32");
     if (info.use_fmt) {
         exe.defineCMacro("USE_FMT", null);
-        for (libfmt.include_dirs.items) |include| {
-            exe.include_dirs.append(include) catch @panic("Unavailable include_dirs");
+        for (libfmt.root_module.include_dirs.items) |include| {
+            exe.root_module.include_dirs.append(b.allocator, include) catch @panic("Unavailable include_dirs");
         }
         exe.linkLibrary(libfmt);
     }
@@ -122,14 +118,12 @@ fn buildExe(b: *std.Build, info: BuildInfo) void {
 
 const BuildInfo = struct {
     filepath: []const u8,
-    target: std.zig.CrossTarget,
+    target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
     use_fmt: bool,
 
     fn filename(self: BuildInfo) []const u8 {
-        var split = std.mem.split(u8, std.fs.path.basename(self.filepath), ".");
+        var split = std.mem.splitSequence(u8, std.fs.path.basename(self.filepath), ".");
         return split.first();
     }
 };
-
-const Path = std.Build.LazyPath;

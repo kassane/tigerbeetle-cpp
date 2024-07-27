@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <cassert>
 #include <tb_client.hpp>
 #include <tb_logger.hpp>
@@ -15,12 +14,10 @@ int main() {
 
     log.trace("Connecting...");
 
-    tb::Client client(
-        0,       // Cluster ID.
-        address, // Server address.
-        32, // MaxConcurrency, could be 1 since it's a single-threaded example.
-        0,  // No need for a global context.
-        tb::on_completion // Completion callback.
+    tb::Client client(0,                // Cluster ID.
+                      address,          // Server address.
+                      0,                // No need for a global context.
+                      tb::on_completion // Completion callback.
     );
 
     if (client.currentStatus() != tb::TB_STATUS_SUCCESS) {
@@ -44,12 +41,6 @@ int main() {
     tb::CompletionContext ctx{};
     tb::tb_packet_t *packet = nullptr;
 
-    // Acquiring a packet for this request:
-    if (client.acquire_packet(&packet) != tb::TB_PACKET_ACQUIRE_OK) {
-      log.error("Too many concurrent packets.");
-      return -1;
-    }
-
     packet->operation =
         tb::TB_OPERATION_CREATE_ACCOUNTS; // The operation to be performed.
     packet->data = accounts.data();       // The data to be sent.
@@ -67,9 +58,6 @@ int main() {
                             packet->status));
       return -1;
     }
-
-    // Releasing the packet, so it can be used in a next request.
-    client.release_packet(&packet);
 
     if (ctx.size != 0) {
       // Checking for errors creating the accounts:
@@ -100,12 +88,6 @@ int main() {
     transfers.at(0).amount = 500;
     transfers.at(0).flags = tb::TB_TRANSFER_PENDING;
 
-    // Acquiring a packet for this request:
-    if (client.acquire_packet(&packet) != tb::TB_PACKET_ACQUIRE_OK) {
-      log.error("Too many concurrent packets.");
-      return -1;
-    }
-
     packet->operation =
         tb::TB_OPERATION_CREATE_TRANSFERS; // The operation to be performed.
     packet->data = transfers.data();       // The data to be sent.
@@ -123,9 +105,6 @@ int main() {
                             packet->status));
       return -1;
     }
-
-    // Releasing the packet, so it can be used in the next request.
-    client.release_packet(&packet);
 
     if (ctx.size != 0) {
       // Checking for errors creating the transfers:
@@ -146,12 +125,6 @@ int main() {
     tb::accountID<2> ids = {1, 2};
     std::memset(accounts.data(), 0, accounts.size() * sizeof(tb::tb_account_t));
 
-    // Acquiring a packet for this request:
-    if (client.acquire_packet(&packet) != tb::TB_PACKET_ACQUIRE_OK) {
-      log.error("Too many concurrent packets.");
-      return -1;
-    }
-
     packet->operation = tb::TB_OPERATION_LOOKUP_ACCOUNTS;
     packet->data = ids.data();
     packet->data_size = sizeof(tb::tb_uint128_t) * ids.size();
@@ -166,9 +139,6 @@ int main() {
                             packet->status));
       return -1;
     }
-
-    // Releasing the packet, so it can be used in a next request.
-    client.release_packet(&packet);
 
     if (ctx.size != 0) {
       // Validate the accounts' pending and posted debits/credits:
@@ -208,12 +178,6 @@ int main() {
     transfers.at(0).amount = 500;
     transfers.at(0).flags = tb::TB_TRANSFER_POST_PENDING_TRANSFER;
 
-    // Acquiring a packet for this request:
-    if (client.acquire_packet(&packet) != tb::TB_PACKET_ACQUIRE_OK) {
-      log.error("Too many concurrent packets.");
-      return -1;
-    }
-
     packet->operation =
         tb::TB_OPERATION_CREATE_TRANSFERS; // The operation to be performed.
     packet->data = transfers.data();       // The data to be sent.
@@ -231,9 +195,6 @@ int main() {
                             packet->status));
       return -1;
     }
-
-    // Releasing the packet, so it can be used in the next request.
-    client.release_packet(&packet);
 
     if (ctx.size != 0) {
       // Checking for errors creating the transfers:
@@ -255,12 +216,6 @@ int main() {
     ids.at(0) = 1;
     ids.at(1) = 2;
 
-    // Acquiring a packet for this request:
-    if (client.acquire_packet(&packet) != tb::TB_PACKET_ACQUIRE_OK) {
-      log.error("Too many concurrent packets.");
-      return -1;
-    }
-
     packet->operation = tb::TB_OPERATION_LOOKUP_ACCOUNTS;
     packet->data = ids.data();
     packet->data_size = sizeof(tb::tb_uint128_t) * ids.size();
@@ -275,9 +230,6 @@ int main() {
                             packet->status));
       return -1;
     }
-
-    // Releasing the packet, so it can be used in a next request.
-    client.release_packet(&packet);
 
     if (ctx.size != 0) {
       // Validate the accounts' pending and posted debits/credits:

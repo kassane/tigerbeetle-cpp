@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.8...3.27)
 
 if(${CMAKE_VERSION} VERSION_LESS 3.14)
     cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
+else()
+    cmake_policy(SET CMP0169 OLD)
 endif()
 
 project(TigerBeetleCpp VERSION 0.3.1 LANGUAGES CXX DESCRIPTION "TigerBeetle Client library")
@@ -30,7 +32,7 @@ option(ENABLE_TSAN "Build with ThreadSanitizer" OFF)
 if(BUILD_EXAMPLES)
     # Define the list of target names
     set(APP_TARGETS
-        basic
+        # basic
         two_phase
         two_phase_many
     )

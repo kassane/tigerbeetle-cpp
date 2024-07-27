@@ -25,8 +25,9 @@
         //     .hash = "multihash [sha256-2]",
         // },
         .fmt = .{
-            .url = "https://github.com/kassane/fmt/archive/dda1045a2ad04fdf74e6b87b71d2af82cd126a59.tar.gz",
-            .hash = "12207e5a76176bd7a2258adafd841ef77aba319a011e26f55d0691b4c8c1c3405c4b",
+            .url = "git+https://github.com/kassane/fmt#bb91bf5b8144d5edd100755fd1c0fb0d7c10a6c5",
+            .hash = "1220817b6e81b25e5f526f3fca171273db65a1712e580406eb690477df156fa2f982",
         },
     },
+    .paths = .{""},
 }

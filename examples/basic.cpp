@@ -19,12 +19,10 @@ auto main() -> int {
   log.trace("Connecting...");
   std::string address = "127.0.0.1:3001";
 
-  tb::Client client(
-      0, // Cluster ID.
-      address,
-      32, // MaxConcurrency, could be 1, since it's a single-threaded example.
-      0,  // No need for a global context.
-      tb::on_completion // Completion callback.
+  tb::Client client(0,                // Cluster ID.
+                    address,          // Address of the server.
+                    0,                // No need for a global context.
+                    tb::on_completion // Completion callback.
   );
 
   if (client.currentStatus() != tb::TB_STATUS_SUCCESS) {
@@ -52,12 +50,6 @@ auto main() -> int {
   accounts.at(1).code = 2;
   accounts.at(1).ledger = 777;
 
-  // Acquiring a packet for this request:
-  if (client.acquire_packet(&packet) != tb::TB_PACKET_ACQUIRE_OK) {
-    log.error("Too many concurrent packets.");
-    return -1;
-  }
-
   packet->operation =
       tb::TB_OPERATION_CREATE_ACCOUNTS; // The operation to be performed.
   packet->data = accounts.data();       // The data to be sent.
@@ -75,9 +67,6 @@ auto main() -> int {
         fmt::format("Error calling create_accounts (ret={})", packet->status));
     return -1;
   }
-
-  // Releasing the packet, so it can be used in a next request.
-  client.release_packet(&packet);
 
   if (ctx.size != 0) {
     // Checking for errors creating the accounts:
@@ -123,12 +112,6 @@ auto main() -> int {
                      return transfer;
                    });
 
-    // Acquiring a packet for this request:
-    if (client.acquire_packet(&packet) != tb::TB_PACKET_ACQUIRE_OK) {
-      log.error("Too many concurrent packets.");
-      return -1;
-    }
-
     packet->operation =
         tb::TB_OPERATION_CREATE_TRANSFERS; // The operation to be performed.
     packet->data = transfers.data();       // The data to be sent.
@@ -154,9 +137,6 @@ auto main() -> int {
                             packet->status));
       return -1;
     }
-
-    // Releasing the packet, so it can be used in the next request.
-    client.release_packet(&packet);
 
     if (ctx.size != 0) {
       // Checking for errors creating the accounts:
@@ -198,12 +178,6 @@ auto main() -> int {
   log.info("Looking up accounts ...");
   tb::accountID<2> ids = {accounts.at(0).id, accounts.at(1).id};
 
-  // Acquiring a packet for this request:
-  if (client.acquire_packet(&packet) != tb::TB_PACKET_ACQUIRE_OK) {
-    log.error("Too many concurrent packets.");
-    return -1;
-  }
-
   packet->operation = tb::TB_OPERATION_LOOKUP_ACCOUNTS;
   packet->data = ids.data();
   packet->data_size = sizeof(tb::tb_uint128_t) * accounts.size();
@@ -218,9 +192,6 @@ auto main() -> int {
         fmt::format("Error calling lookup_accounts (ret={})", packet->status));
     return -1;
   }
-
-  // Releasing the packet, so it can be used in a next request.
-  client.release_packet(&packet);
 
   if (ctx.size == 0) {
     log.warn("No accounts found!");

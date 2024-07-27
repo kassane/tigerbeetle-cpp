@@ -77,13 +77,13 @@ struct CompletionContext {
 class Client {
 public:
   Client(uint32_t cluster_id, const std::string &address,
-         uint32_t packets_count, uintptr_t on_completion_ctx,
+         uintptr_t on_completion_ctx,
          void (*on_completion_fn)(uintptr_t, tb_client_t, tb_packet_t *,
                                   const uint8_t *, uint32_t))
       : client(nullptr) {
     status =
         tb_client_init(&client, cluster_id, address.c_str(), address.length(),
-                       packets_count, on_completion_ctx, on_completion_fn);
+                       on_completion_ctx, on_completion_fn);
   }
 
   Client(const Client &) = delete;
@@ -103,15 +103,7 @@ public:
 
   tb_client_t get() const { return client; }
 
-  TB_PACKET_ACQUIRE_STATUS acquire_packet(tb_packet_t **packet) const {
-    return tb_client_acquire_packet(client, packet);
-  }
-
   TB_STATUS currentStatus() { return status; };
-
-  void release_packet(tb_packet_t **packet) {
-    tb_client_release_packet(client, *packet);
-  }
 
   void send_request(tb_packet_t *packet, CompletionContext *ctx) {
     // Submits the request asynchronously:
