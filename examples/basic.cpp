@@ -1,46 +1,51 @@
 #include <algorithm>
 #include <chrono>
 #include <cstddef>
+#include <cstdlib>
+#include <fmt/format.h>
 #include <tb_client.hpp>
-#include <tb_logger.hpp>
 
-namespace tb = tigerbeetle;
+inline long long get_time_ms() {
+  auto now = std::chrono::steady_clock::now().time_since_epoch();
+  return std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
+}
 
-auto main() -> int {
-  constexpr size_t MAX_BATCHES = 100;
-  constexpr size_t TRANSFERS_PER_BATCH =
-      tb::MAX_MESSAGE_SIZE / sizeof(tb::tb_transfer_t);
+int main([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
 
-  tb::Logger log;
+  fmt::println("TigerBeetle C++ Sample");
+  fmt::println("Connecting...");
 
-  fmt::print(fmt::fg(fmt::color::green_yellow) | fmt::emphasis::bold,
-             "TigerBeetle C++ - Basic [Sample]\n\n");
+  auto address = [&]() -> std::string {
+    const char *env_address = std::getenv("TB_ADDRESS");
+    if (env_address == nullptr) {
+      return "3001";
+    }
+    std::string_view env_address_view(env_address);
+    return std::string(env_address_view);
+  }();
 
-  log.trace("Connecting...");
-  std::string address = "127.0.0.1:3001";
+  tigerbeetle::Client client(address);
 
-  tb::Client client(0,                // Cluster ID.
-                    address,          // Address of the server.
-                    0,                // No need for a global context.
-                    tb::on_completion // Completion callback.
-  );
-
-  if (client.currentStatus() != tb::TB_STATUS_SUCCESS) {
-    log.error("Failed to initialize tb_client");
-    return -1;
+  if (client.currentStatus() != tigerbeetle::TB_STATUS_SUCCESS) {
+    fmt::println("Failed to initialize tb_client");
+    return EXIT_FAILURE;
   }
 
-  tb::CompletionContext ctx{};
-  tb::tb_packet_t *packet = nullptr;
+  tigerbeetle::CompletionContext ctx{};
+  tigerbeetle::tb_packet_t packet{};
 
   ////////////////////////////////////////////////////////////
   // Submitting a batch of accounts:                        //
   ////////////////////////////////////////////////////////////
 
-  tb::account<2> accounts;
+  static constexpr size_t ACCOUNTS_LEN = 2;
+  static constexpr size_t ACCOUNTS_SIZE =
+      sizeof(tigerbeetle::tb_account_t) * ACCOUNTS_LEN;
+  // tigerbeetle::tb_account_t accounts[ACCOUNTS_LEN];
+  auto accounts = tigerbeetle::make_account<ACCOUNTS_LEN>();
 
   // Zeroing the memory, so we don't have to initialize every field.
-  std::memset(accounts.data(), 0, accounts.size() * sizeof(tb::tb_account_t));
+  memset(&accounts, 0, ACCOUNTS_SIZE);
 
   accounts.at(0).id = 1;
   accounts.at(0).code = 2;
@@ -50,59 +55,63 @@ auto main() -> int {
   accounts.at(1).code = 2;
   accounts.at(1).ledger = 777;
 
-  packet->operation =
-      tb::TB_OPERATION_CREATE_ACCOUNTS; // The operation to be performed.
-  packet->data = accounts.data();       // The data to be sent.
-  packet->data_size = accounts.size() * sizeof(tb::tb_account_t); //
-  packet->user_data = &ctx;          // User-defined context.
-  packet->status = tb::TB_PACKET_OK; // Will be set when the reply arrives.
+  packet.operation =
+      tigerbeetle::TB_OPERATION_CREATE_ACCOUNTS; // The operation to be
+                                                 // performed.
+  packet.data = accounts.data();                 // The data to be sent.
+  packet.data_size = ACCOUNTS_SIZE;              //
+  packet.user_data = &ctx;                       // User-defined context.
+  packet.status =
+      tigerbeetle::TB_PACKET_OK; // Will be set when the reply arrives.
 
-  log.trace("Creating accounts...");
+  fmt::print("Creating accounts...\n");
 
   client.send_request(packet, &ctx);
 
-  if (packet->status != tb::TB_PACKET_OK) {
+  if (packet.status != tigerbeetle::TB_PACKET_OK) {
     // Checking if the request failed:
-    log.error(
-        fmt::format("Error calling create_accounts (ret={})", packet->status));
-    return -1;
+    fmt::print("Error calling create_accounts (ret={})\n", packet.status);
+    return EXIT_FAILURE;
   }
 
   if (ctx.size != 0) {
     // Checking for errors creating the accounts:
-    tb::tb_create_accounts_result_t *results =
-        reinterpret_cast<tb::tb_create_accounts_result_t *>(ctx.reply.data());
-    int results_len = ctx.size / sizeof(tb::tb_create_accounts_result_t);
-    log.info("create_account results:");
+    auto results = reinterpret_cast<tigerbeetle::tb_create_accounts_result_t *>(
+        ctx.reply.data());
+    int results_len =
+        ctx.size / sizeof(tigerbeetle::tb_create_accounts_result_t);
+    fmt::print("create_account results:\n");
     for (int i = 0; i < results_len; i++) {
-      log.info(
-          fmt::format("index={}, ret={}", results[i].index, results[i].result));
+      fmt::print("index={}, ret={}\n", results[i].index, results[i].result);
     }
-    return -1;
+    return EXIT_FAILURE;
   }
 
-  log.info("Accounts created successfully");
+  fmt::print("Accounts created successfully\n");
 
   ////////////////////////////////////////////////////////////
   // Submitting multiple batches of transfers:              //
   ////////////////////////////////////////////////////////////
 
-  log.trace("Creating transfers...");
-
-  std::size_t max_latency_ms = 0;
-  std::size_t total_time_ms = 0;
-
-  for (std::size_t i = 0; i < MAX_BATCHES; i++) {
-    tb::transfer<TRANSFERS_PER_BATCH> transfers;
+  fmt::print("Creating transfers...\n");
+  static constexpr auto MAX_BATCHES = 100;
+  static constexpr auto TRANSFERS_PER_BATCH =
+      ((tigerbeetle::MAX_MESSAGE_SIZE) / sizeof(tigerbeetle::tb_transfer_t));
+  static constexpr auto TRANSFERS_SIZE =
+      (sizeof(tigerbeetle::tb_transfer_t) * TRANSFERS_PER_BATCH);
+  long max_latency_ms = 0;
+  long total_time_ms = 0;
+  for (int i = 0; i < MAX_BATCHES; i++) {
+    auto transfers = tigerbeetle::make_transfer<TRANSFERS_PER_BATCH>();
 
     // Zeroing the memory, so we don't have to initialize every field.
-    std::memset(transfers.data(), 0, transfers.size());
+    std::memset(transfers.data(), 0, TRANSFERS_SIZE);
 
     std::size_t baseID = i * TRANSFERS_PER_BATCH + 1;
     std::size_t j = 0;
 
     std::transform(transfers.begin(), transfers.end(), transfers.begin(),
-                   [&](tb::tb_transfer_t &transfer) {
+                   [&](tigerbeetle::tb_transfer_t &transfer) {
                      transfer.id = baseID + j++;
                      transfer.debit_account_id = accounts.at(0).id;
                      transfer.credit_account_id = accounts.at(1).id;
@@ -112,104 +121,97 @@ auto main() -> int {
                      return transfer;
                    });
 
-    packet->operation =
-        tb::TB_OPERATION_CREATE_TRANSFERS; // The operation to be performed.
-    packet->data = transfers.data();       // The data to be sent.
-    packet->data_size = tb::MAX_MESSAGE_SIZE;
-    packet->user_data = &ctx;          // User-defined context.
-    packet->status = tb::TB_PACKET_OK; // Will be set when the reply arrives.
+    packet.operation =
+        tigerbeetle::TB_OPERATION_CREATE_TRANSFERS;   // The operation to be
+                                                      // performed.
+    packet.data = transfers.data();                   // The data to be sent.
+    packet.data_size = tigerbeetle::MAX_MESSAGE_SIZE; //
+    packet.user_data = &ctx;                          // User-defined context.
+    packet.status =
+        tigerbeetle::TB_PACKET_OK; // Will be set when the reply arrives.
 
-    std::size_t now =
-        std::chrono::system_clock::now().time_since_epoch().count();
+    long long now = get_time_ms();
 
     client.send_request(packet, &ctx);
 
-    std::size_t elapsed_ms =
-        std::chrono::system_clock::now().time_since_epoch().count() - now;
-    max_latency_ms =
-        std::max(max_latency_ms, static_cast<std::size_t>(elapsed_ms));
+    long elapsed_ms = get_time_ms() - now;
+    if (elapsed_ms > max_latency_ms)
+      max_latency_ms = elapsed_ms;
+    total_time_ms += elapsed_ms;
 
-    total_time_ms += static_cast<std::size_t>(elapsed_ms);
-
-    if (packet->status != tb::TB_PACKET_OK) {
+    if (packet.status != tigerbeetle::TB_PACKET_OK) {
       // Checking if the request failed:
-      log.error(fmt::format("Error calling create_transfers (ret={})",
-                            packet->status));
-      return -1;
+      fmt::print("Error calling create_transfers (ret={})\n", packet.status);
+      return EXIT_FAILURE;
     }
 
     if (ctx.size != 0) {
       // Checking for errors creating the accounts:
-      tb::tb_create_transfers_result_t *results =
-          reinterpret_cast<tb::tb_create_transfers_result_t *>(
+      auto results =
+          reinterpret_cast<tigerbeetle::tb_create_transfers_result_t *>(
               ctx.reply.data());
-      std::size_t results_len =
-          ctx.size / sizeof(tb::tb_create_transfers_result_t);
-      log.info("create_transfers results:");
-
-      std::size_t i2 = 0;
-      std::for_each(results, results + results_len,
-                    [&](const tb::tb_create_transfers_result_t &result) {
-                      log.info(fmt::format("index={}, ret={}", result.index,
-                                           result.result));
-                      i2++;
-                    });
-
-      return -1;
+      int results_len =
+          ctx.size / sizeof(tigerbeetle::tb_create_transfers_result_t);
+      fmt::print("create_transfers results:\n");
+      for (int idx = 0; idx < results_len; idx++) {
+        fmt::print("index={}, ret={}\n", results[idx].index,
+                   results[idx].result);
+      }
+      return EXIT_FAILURE;
     }
   }
 
-  log.info("Transfers created successfully");
-  fmt::println("============================================");
+  fmt::print("Transfers created successfully\n");
+  fmt::print("============================================\n");
 
-  log.trace(
-      fmt::format("{} transfers per second",
-                  (MAX_BATCHES * TRANSFERS_PER_BATCH * 1000) / total_time_ms));
-  log.trace(
-      fmt::format("create_transfers max p100 latency per {} transfers = {}ms",
-                  TRANSFERS_PER_BATCH, max_latency_ms));
-  log.trace(fmt::format("total {} transfers in {}ms",
-                        MAX_BATCHES * TRANSFERS_PER_BATCH, total_time_ms));
+  fmt::print("{} transfers per second\n",
+             (MAX_BATCHES * TRANSFERS_PER_BATCH * 1000) / total_time_ms);
+  fmt::print("create_transfers max p100 latency per {} transfers = {}ms\n",
+             TRANSFERS_PER_BATCH, max_latency_ms);
+  fmt::print("total {} transfers in {}ms\n", MAX_BATCHES * TRANSFERS_PER_BATCH,
+             total_time_ms);
+  fmt::print("\n");
 
   ////////////////////////////////////////////////////////////
   // Looking up accounts:                                   //
   ////////////////////////////////////////////////////////////
 
-  log.info("Looking up accounts ...");
-  tb::accountID<2> ids = {accounts.at(0).id, accounts.at(1).id};
+  fmt::print("Looking up accounts ...\n");
+  tigerbeetle::accountID<ACCOUNTS_LEN> ids = {accounts.at(0).id,
+                                              accounts.at(1).id};
 
-  packet->operation = tb::TB_OPERATION_LOOKUP_ACCOUNTS;
-  packet->data = ids.data();
-  packet->data_size = sizeof(tb::tb_uint128_t) * accounts.size();
-  packet->user_data = &ctx;
-  packet->status = tb::TB_PACKET_OK;
+  packet.operation = tigerbeetle::TB_OPERATION_LOOKUP_ACCOUNTS;
+  packet.data = ids.data();
+  packet.data_size = sizeof(tigerbeetle::tb_uint128_t) * ACCOUNTS_LEN;
+  packet.user_data = &ctx;
+  packet.status = tigerbeetle::TB_PACKET_OK;
 
   client.send_request(packet, &ctx);
 
-  if (packet->status != tb::TB_PACKET_OK) {
+  if (packet.status != tigerbeetle::TB_PACKET_OK) {
     // Checking if the request failed:
-    log.error(
-        fmt::format("Error calling lookup_accounts (ret={})", packet->status));
-    return -1;
+    fmt::print("Error calling lookup_accounts (ret={})", packet.status);
+    return EXIT_FAILURE;
   }
 
   if (ctx.size == 0) {
-    log.warn("No accounts found!");
-    return -1;
+    fmt::println("No accounts found");
+    return EXIT_FAILURE;
+  } else {
+    // Printing the account's balance:
+    auto results =
+        reinterpret_cast<tigerbeetle::tb_account_t *>(ctx.reply.data());
+    int results_len = ctx.size / sizeof(tigerbeetle::tb_account_t);
+    fmt::print("{} Account(s) found\n", results_len);
+    fmt::print("============================================\n");
+
+    std::for_each(results, results + results_len,
+                  [&](const tigerbeetle::tb_account_t &result) {
+                    fmt::println("id={}", static_cast<std::size_t>(result.id));
+                    fmt::println("debits_posted={}", result.debits_posted);
+                    fmt::println("credits_posted={}", result.credits_posted);
+                  });
   }
-  // Printing the account's balance:
-  tb::tb_account_t *results =
-      reinterpret_cast<tb::tb_account_t *>(ctx.reply.data());
-  int results_len = ctx.size / sizeof(tb::tb_account_t);
-  log.info(fmt::format("{} Account(s) found", results_len));
-  fmt::println("============================================");
 
-  std::for_each(
-      results, results + results_len, [&](const tb::tb_account_t &result) {
-        log.trace(fmt::format("id={}", static_cast<std::size_t>(result.id)));
-        log.trace(fmt::format("debits_posted={}", result.debits_posted));
-        log.trace(fmt::format("credits_posted={}", result.credits_posted));
-      });
-
-  return 0;
+  return EXIT_SUCCESS;
 }

@@ -19,7 +19,6 @@ a source language processor.
 */
 #ifndef TB_CLIENT_HPP
 #define TB_CLIENT_HPP
-#pragma once
 #include <array>
 #include <concepts>
 #include <cstdint>
@@ -74,12 +73,27 @@ struct CompletionContext {
   std::mutex mutex;
 };
 
+inline void default_on_completion([[maybe_unused]] uintptr_t context,
+                                  [[maybe_unused]] tb_client_t client,
+                                  tb_packet_t *packet, const uint8_t *data,
+                                  uint32_t size) {
+  auto ctx = static_cast<CompletionContext *>(packet->user_data);
+  {
+    std::lock_guard<std::mutex> lock(
+        ctx->mutex); // Lock the mutex before accessing ctx members
+    std::copy(data, data + size, ctx->reply.begin());
+    ctx->size = size;
+    ctx->completed = true;
+  }
+}
+
 class Client {
 public:
-  Client(uint32_t cluster_id, const std::string &address,
-         uintptr_t on_completion_ctx,
-         void (*on_completion_fn)(uintptr_t, tb_client_t, tb_packet_t *,
-                                  const uint8_t *, uint32_t))
+  explicit Client(const std::string &address, uint32_t cluster_id = 0,
+                  uintptr_t on_completion_ctx = 0,
+                  void (*on_completion_fn)(uintptr_t, tb_client_t,
+                                           tb_packet_t *, const uint8_t *,
+                                           uint32_t) = &default_on_completion)
       : client(nullptr) {
     status =
         tb_client_init(&client, cluster_id, address.c_str(), address.length(),
@@ -105,12 +119,12 @@ public:
 
   TB_STATUS currentStatus() { return status; };
 
-  void send_request(tb_packet_t *packet, CompletionContext *ctx) {
+  void send_request(tb_packet_t &packet, CompletionContext *ctx) {
     // Submits the request asynchronously:
     ctx->completed = false;
     {
       std::lock_guard<std::mutex> lock(ctx->mutex);
-      tb_client_submit(client, packet);
+      tb_client_submit(client, &packet);
     }
     while (true) {
       std::lock_guard<std::mutex> lock(ctx->mutex);
@@ -132,19 +146,5 @@ private:
   tb_client_t client;
   TB_STATUS status;
 };
-
-inline void on_completion([[maybe_unused]] uintptr_t context,
-                          [[maybe_unused]] tb_client_t client,
-                          tb_packet_t *packet, const uint8_t *data,
-                          uint32_t size) {
-  auto ctx = static_cast<CompletionContext *>(packet->user_data);
-  {
-    std::lock_guard<std::mutex> lock(
-        ctx->mutex); // Lock the mutex before accessing ctx members
-    std::copy(data, data + size, ctx->reply.begin());
-    ctx->size = size;
-    ctx->completed = true;
-  }
-}
 } // namespace tigerbeetle
 #endif // TB_CLIENT_HPP

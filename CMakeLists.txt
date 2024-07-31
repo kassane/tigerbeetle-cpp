@@ -32,7 +32,7 @@ option(ENABLE_TSAN "Build with ThreadSanitizer" OFF)
 if(BUILD_EXAMPLES)
     # Define the list of target names
     set(APP_TARGETS
-        # basic
+        basic
         two_phase
         two_phase_many
     )
@@ -68,7 +68,7 @@ if(BUILD_EXAMPLES)
 
         # Set common compile options for all targets
         target_compile_options(${app} PRIVATE
-            -Wall -Wextra -Werror -Wshadow -Wpedantic
+            -Wall -Wextra -Werror -Wno-error=array-bounds -Wshadow -Wpedantic
         )
 
         if(ENABLE_ASAN)

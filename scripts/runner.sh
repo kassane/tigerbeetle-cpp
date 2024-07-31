@@ -22,9 +22,9 @@ if [ -f "$FILE" ]; then
     rm "$FILE"
 fi
 
-./zig/zig build run -- format --cluster=0 --replica=0 --replica-count=1  "$FILE" > running.log 2>&1
+./tigerbeetle format --cluster=0 --replica=0 --replica-count=1  "$FILE" > running.log 2>&1
 echo "Starting replica 0"
-./zig/zig build run -- start --addresses=$TB_ADDRESS  "$FILE" > running.log 2>&1 &
+./tigerbeetle start --addresses=$TB_ADDRESS  "$FILE" > running.log 2>&1 &
 
 echo ""
 echo "running client..."

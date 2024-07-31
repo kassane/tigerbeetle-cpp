@@ -64,6 +64,20 @@ else()
     set(RUN_WITH_TB ${CMAKE_CURRENT_SOURCE_DIR}/scripts/runner.sh)
 endif()
 
+if(NOT EXISTS "${TIGERBEETLE_ROOT_DIR}/tigerbeetle")
+    message(STATUS "Build TigerBeetle with Zig")
+    execute_process(
+        COMMAND ${BUILD_TB} ${ZIG_BUILD_TYPE} ${ZIG_CONFIG}
+        WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
+        RESULT_VARIABLE BUILD_TB_RESULT
+    )
+    if(NOT ${BUILD_TB_RESULT} EQUAL 0)
+        message(FATAL_ERROR "Failed to build TigerBeetle with Zig")
+    endif()
+else()
+    message(STATUS "TigerBeetle already builded. Skipping buiding.")
+endif()
+
 if(BUILD_TB_C_CLIENT)
     # Build c_client with Zig
     message(STATUS "Build c_client libraries with Zig")
@@ -191,10 +205,17 @@ endif()
 
 # Clean the zig-cache directory
 execute_process(
-    COMMAND ${CMAKE_COMMAND} -E remove_directory ${TIGERBEETLE_ROOT_DIR}/zig-cache
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${TIGERBEETLE_ROOT_DIR}/.zig-cache
     RESULT_VARIABLE CLEAN_ZIG_CACHE_RESULT
 )
-
 if(NOT ${CLEAN_ZIG_CACHE_RESULT} EQUAL 0)
     message(FATAL_ERROR "Failed to clean zig-cache directory.")
+endif()
+
+execute_process(
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${TIGERBEETLE_ROOT_DIR}/zig-out
+    RESULT_VARIABLE CLEAN_ZIG_OUT_RESULT
+)
+if(NOT ${CLEAN_ZIG_OUT_RESULT} EQUAL 0)
+    message(FATAL_ERROR "Failed to clean zig-out directory.")
 endif()

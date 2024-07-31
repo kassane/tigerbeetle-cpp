@@ -3,6 +3,5 @@ module TigerBeetle {
 }
 module TigerBeetleCpp {
  header "tb_client.hpp"
- header "tb_logger.hpp"
  requires cplusplus20
 }
