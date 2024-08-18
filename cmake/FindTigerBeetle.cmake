@@ -21,21 +21,21 @@
 set(TIGERBEETLE_ROOT_DIR ${CMAKE_BINARY_DIR}/_deps/tb-src)
 
 # Specify the directories for different platforms
-set(TIGERBEETLE_INCLUDE_DIR ${TIGERBEETLE_ROOT_DIR}/src/clients/c/lib/include)
+set(TIGERBEETLE_INCLUDE_DIR ${TIGERBEETLE_ROOT_DIR}/src/clients/c)
 
 if(RUN_INSTALL_ZIG)
     if(NOT EXISTS "${TIGERBEETLE_ROOT_DIR}/zig/zig")
         if(WIN32)
             # Run install_zig.bat script
             execute_process(
-                COMMAND cmd /c ${TIGERBEETLE_ROOT_DIR}/scripts/install_zig.bat
+                COMMAND cmd /c ${TIGERBEETLE_ROOT_DIR}/zig/download.bat
                 WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
                 RESULT_VARIABLE INSTALL_ZIG_RESULT
             )
         else()
             # Run install_zig.sh script
             execute_process(
-                COMMAND sh ${TIGERBEETLE_ROOT_DIR}/scripts/install_zig.sh
+                COMMAND sh ${TIGERBEETLE_ROOT_DIR}/zig/download.sh
                 WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
                 RESULT_VARIABLE INSTALL_ZIG_RESULT
             )
@@ -79,15 +79,19 @@ else()
 endif()
 
 if(BUILD_TB_C_CLIENT)
-    # Build c_client with Zig
-    message(STATUS "Build c_client libraries with Zig")
-    execute_process(
-        COMMAND ${BUILD_TB} clients:c ${ZIG_BUILD_TYPE} ${ZIG_CONFIG}
-        WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
-        RESULT_VARIABLE BUILD_C_CLIENT_RESULT
-    )
-    if(NOT ${BUILD_C_CLIENT_RESULT} EQUAL 0)
-        message(FATAL_ERROR "Failed to build c_client libraries with Zig")
+    if(NOT EXISTS "${TIGERBEETLE_INCLUDE_DIR}/lib")
+        # Build c_client with Zig
+        message(STATUS "Build c_client libraries with Zig")
+        execute_process(
+            COMMAND ${BUILD_TB} clients:c ${ZIG_BUILD_TYPE} ${ZIG_CONFIG}
+            WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
+            RESULT_VARIABLE BUILD_C_CLIENT_RESULT
+        )
+        if(NOT ${BUILD_C_CLIENT_RESULT} EQUAL 0)
+            message(FATAL_ERROR "Failed to build c_client libraries with Zig")
+        endif()
+    else()
+        message(STATUS "c_client libraries already builded. Skipping buiding.")
     endif()
 endif()
 
@@ -147,6 +151,10 @@ file(COPY ${TIGERBEETLE_LIBRARY_DIR}/${CMAKE_TIGERBEETLE_LIBS_INIT}${CMAKE_TIGER
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ${TIGERBEETLE_INCLUDE_DIR}/tb_client.h
     DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+# copy tigerbeetle executable
+file(COPY ${TIGERBEETLE_ROOT_DIR}/tigerbeetle${CMAKE_EXECUTABLE_SUFFIX}
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 if(RUN_TB_TEST)
     # Build and run test with Zig
