@@ -50,10 +50,8 @@ endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(ZIG_BUILD_TYPE "")
-    set(ZIG_CONFIG "-Dconfig=default")
 else()
     set(ZIG_BUILD_TYPE "-Drelease")
-    set(ZIG_CONFIG "-Dconfig=production")
 endif()
 
 if(WIN32)
@@ -67,7 +65,7 @@ endif()
 if(NOT EXISTS "${TIGERBEETLE_ROOT_DIR}/tigerbeetle")
     message(STATUS "Build TigerBeetle with Zig")
     execute_process(
-        COMMAND ${BUILD_TB} ${ZIG_BUILD_TYPE} ${ZIG_CONFIG}
+        COMMAND ${BUILD_TB} ${ZIG_BUILD_TYPE}
         WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
         RESULT_VARIABLE BUILD_TB_RESULT
     )
@@ -83,7 +81,7 @@ if(BUILD_TB_C_CLIENT)
         # Build c_client with Zig
         message(STATUS "Build c_client libraries with Zig")
         execute_process(
-            COMMAND ${BUILD_TB} clients:c ${ZIG_BUILD_TYPE} ${ZIG_CONFIG}
+            COMMAND ${BUILD_TB} clients:c ${ZIG_BUILD_TYPE}
             WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
             RESULT_VARIABLE BUILD_C_CLIENT_RESULT
         )
