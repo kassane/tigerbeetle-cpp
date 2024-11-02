@@ -126,11 +126,6 @@ Terminating tigerbeetle start process...
 
 **Note:** `zig c++` equal to `clang++ -stdlib=libc++ -fuse-ld=lld` for all targets (builtin), except to MacOS target, replacing `lld` to [`zld`](https://github.com/kubkon/zld)!!
 
-## TODO
-
-- [ ] zig 0.11.0 - missing zig-pkg (choose cmake or zig only) to `c_client` support.
-
-
 ## Frequently Asked Questions
 
 #### Do I need to install Zig to compile this project?

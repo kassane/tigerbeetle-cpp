@@ -20,7 +20,6 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-      - uses: mlugg/setup-zig@v1
       - uses: lukka/get-cmake@latest
         with:
           cmakeVersion: latest
@@ -32,9 +31,6 @@ jobs:
         run: |
             cmake --build build --parallel && \
             cmake --build build --target testing
-
-      - name: Zig - Build C++ client
-        run: zig build --summary all -freference-trace
 
   msys2-mingw:
     runs-on: windows-latest
@@ -51,7 +47,6 @@ jobs:
           path: temp
           submodules: recursive
           fetch-depth: 0
-      - uses: mlugg/setup-zig@v1
       - uses: msys2/setup-msys2@v2
         with:
           msystem: ${{ matrix.sys }}
@@ -75,12 +70,6 @@ jobs:
         run: |
             cd /C/_
             cmake --build build --parallel && cmake --build build --target testing
-
-      - name: Zig - Build C++ client
-        shell: msys2 {0}
-        run: |
-            cd /C/_
-            zig build --summary all -freference-trace
 
 
   keepalive-job:
