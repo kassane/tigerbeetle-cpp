@@ -1,0 +1,60 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "default",
+            "displayName": "Default Config",
+            "description": "Default build using Ninja generator",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": true,
+                "BUILD_EXAMPLES": false,
+                "BUILD_TESTS": false,
+                "USE_FMT": false,
+                "ENABLE_ASAN": false,
+                "ENABLE_TSAN": false
+            }
+        },
+        {
+            "name": "release",
+            "inherits": "default",
+            "displayName": "Release Config",
+            "description": "Release build with optimizations",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": false
+            }
+        },
+        {
+            "name": "dev",
+            "inherits": "default",
+            "displayName": "Development Config",
+            "description": "Development build with examples and tests",
+            "cacheVariables": {
+                "BUILD_EXAMPLES": true,
+                "BUILD_TESTS": true,
+                "USE_FMT": true
+            }
+        },
+        {
+            "name": "asan",
+            "inherits": "dev",
+            "displayName": "ASan Config",
+            "description": "Development build with AddressSanitizer",
+            "cacheVariables": {
+                "ENABLE_ASAN": true
+            }
+        },
+        {
+            "name": "tsan",
+            "inherits": "dev",
+            "displayName": "TSan Config",
+            "description": "Development build with ThreadSanitizer",
+            "cacheVariables": {
+                "ENABLE_TSAN": true
+            }
+        }
+    ]
+}
