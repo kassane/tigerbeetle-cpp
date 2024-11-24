@@ -75,8 +75,9 @@ struct CompletionContext {
 
 inline void default_on_completion([[maybe_unused]] uintptr_t context,
                                   [[maybe_unused]] tb_client_t client,
-                                  tb_packet_t *packet, const uint8_t *data,
-                                  uint32_t size) {
+                                  tb_packet_t *packet,
+                                  [[maybe_unused]] uint64_t timestamp,
+                                  const uint8_t *data, uint32_t size) {
   auto ctx = static_cast<CompletionContext *>(packet->user_data);
   {
     std::lock_guard<std::mutex> lock(
@@ -92,7 +93,8 @@ public:
   explicit Client(const std::string &address, uint32_t cluster_id = 0,
                   uintptr_t on_completion_ctx = 0,
                   void (*on_completion_fn)(uintptr_t, tb_client_t,
-                                           tb_packet_t *, const uint8_t *,
+                                           tb_packet_t *, uint64_t,
+                                           const uint8_t *,
                                            uint32_t) = &default_on_completion)
       : client(nullptr) {
     status =
