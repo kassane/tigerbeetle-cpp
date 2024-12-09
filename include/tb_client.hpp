@@ -90,7 +90,8 @@ inline void default_on_completion([[maybe_unused]] uintptr_t context,
 
 class Client {
 public:
-  explicit Client(const std::string &address, uint32_t cluster_id = 0,
+  explicit Client(const std::string &address,
+                  std::array<uint8_t, 16> cluster_id = {},
                   uintptr_t on_completion_ctx = 0,
                   void (*on_completion_fn)(uintptr_t, tb_client_t,
                                            tb_packet_t *, uint64_t,
@@ -98,8 +99,8 @@ public:
                                            uint32_t) = &default_on_completion)
       : client(nullptr) {
     status =
-        tb_client_init(&client, cluster_id, address.c_str(), address.length(),
-                       on_completion_ctx, on_completion_fn);
+        tb_client_init(&client, cluster_id.data(), address.c_str(),
+                       address.length(), on_completion_ctx, on_completion_fn);
   }
 
   Client(const Client &) = delete;

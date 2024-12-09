@@ -17,6 +17,15 @@
 
 ### How to Build and Run
 
+**CMake Presets**
+
+```bash
+$> cmake --preset dev
+# OR
+$> cmake --preset release
+$> cmake --build build -t run_with_tb
+```
+
 **Another C++ toolchain**
 
 ```bash
