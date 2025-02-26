@@ -23,7 +23,7 @@ int main() {
 
     tb::Client client(address);
 
-    if (client.currentStatus() != tb::TB_STATUS_SUCCESS) {
+    if (client.initStatus() != tb::TB_INIT_SUCCESS) {
       fmt::println(stderr, "Failed to initialize tb_client");
       return EXIT_FAILURE;
     }

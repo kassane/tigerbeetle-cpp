@@ -74,8 +74,7 @@ struct CompletionContext {
 };
 
 inline void default_on_completion([[maybe_unused]] uintptr_t context,
-                                  [[maybe_unused]] tb_client_t client,
-                                  tb_packet_t *packet,
+                                  [[maybe_unused]] tb_packet_t *packet,
                                   [[maybe_unused]] uint64_t timestamp,
                                   const uint8_t *data, uint32_t size) {
   auto ctx = static_cast<CompletionContext *>(packet->user_data);
@@ -93,11 +92,10 @@ public:
   explicit Client(const std::string &address,
                   std::array<uint8_t, 16> cluster_id = {},
                   uintptr_t on_completion_ctx = 0,
-                  void (*on_completion_fn)(uintptr_t, tb_client_t,
-                                           tb_packet_t *, uint64_t,
+                  void (*on_completion_fn)(uintptr_t, tb_packet_t *, uint64_t,
                                            const uint8_t *,
                                            uint32_t) = &default_on_completion)
-      : client(nullptr) {
+      : client{} {
     status =
         tb_client_init(&client, cluster_id.data(), address.c_str(),
                        address.length(), on_completion_ctx, on_completion_fn);
@@ -106,48 +104,58 @@ public:
   Client(const Client &) = delete;
   Client &operator=(const Client &) = delete;
 
-  Client(Client &&other) : client(nullptr) { std::swap(client, other.client); }
+  Client(Client &&other) noexcept : client{} {
+    std::swap(client, other.client);
+    std::swap(status, other.status);
+  }
 
-  Client &operator=(Client &&other) {
+  Client &operator=(Client &&other) noexcept {
     if (this != &other) {
       destroy();
       std::swap(client, other.client);
+      std::swap(status, other.status);
     }
     return *this;
   }
 
-  ~Client() { destroy(); }
+  ~Client() noexcept {
+    if (client_status == TB_CLIENT_OK) {
+      destroy();
+    }
+  }
 
-  tb_client_t get() const { return client; }
-
-  TB_STATUS currentStatus() { return status; };
+  tb_client_t *get() { return &client; }
+  const tb_client_t *get() const { return &client; }
+  TB_INIT_STATUS initStatus() const { return status; }
+  TB_CLIENT_STATUS clientStatus() const { return client_status; }
 
   void send_request(tb_packet_t &packet, CompletionContext *ctx) {
-    // Submits the request asynchronously:
     ctx->completed = false;
     {
       std::lock_guard<std::mutex> lock(ctx->mutex);
-      tb_client_submit(client, &packet);
+      client_status = tb_client_submit(&client, &packet);
     }
-    while (true) {
-      std::lock_guard<std::mutex> lock(ctx->mutex);
-      if (ctx->completed) {
-        break;
+    if (client_status == TB_CLIENT_OK) {
+      while (true) {
+        std::lock_guard<std::mutex> lock(ctx->mutex);
+        if (ctx->completed) {
+          break;
+        }
       }
-      // Release the lock and wait for completion
     }
   }
 
 private:
   void destroy() {
-    if (client != nullptr) {
-      tb_client_deinit(client);
-      client = nullptr;
+    if (client.opaque[0] != 0) {
+      client_status = tb_client_deinit(&client);
+      std::fill_n(client.opaque, 4, 0);
     }
   }
 
   tb_client_t client;
-  TB_STATUS status;
+  TB_INIT_STATUS status;
+  TB_CLIENT_STATUS client_status;
 };
 } // namespace tigerbeetle
 #endif // TB_CLIENT_HPP

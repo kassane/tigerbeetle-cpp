@@ -7,7 +7,7 @@
  C++ version: 20
 
 **Libraries**
-- fmtlib v11.0
+- fmtlib v11.1
 - TigerBeetle C client library (latest version - branch main)
 
 **Tools**

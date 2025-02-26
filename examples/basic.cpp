@@ -26,7 +26,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
 
   tigerbeetle::Client client(address);
 
-  if (client.currentStatus() != tigerbeetle::TB_STATUS_SUCCESS) {
+  if (client.initStatus() != tigerbeetle::TB_INIT_SUCCESS) {
     fmt::println("Failed to initialize tb_client");
     return EXIT_FAILURE;
   }

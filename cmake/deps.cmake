@@ -65,7 +65,7 @@ if(USE_FMT)
     FetchContent_Declare(
         fmt
         GIT_REPOSITORY "https://github.com/fmtlib/fmt.git"
-        GIT_TAG 11.0.2
+        GIT_TAG 11.1.3
     )
     FetchContent_GetProperties(fmt)
     if(NOT fmt_POPULATED)
