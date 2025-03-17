@@ -20,10 +20,14 @@ a source language processor.
 #ifndef TB_CLIENT_HPP
 #define TB_CLIENT_HPP
 #include <array>
-#include <concepts>
+#include <condition_variable>
 #include <cstdint>
+#include <functional>
+#include <memory>
 #include <mutex>
-#include <string>
+#include <optional>
+#include <span>
+#include <string_view>
 
 namespace tigerbeetle {
 
@@ -31,6 +35,8 @@ namespace tigerbeetle {
 
 using tb_uint32_t = std::uint32_t;
 using tb_uint64_t = std::uint64_t;
+
+// Concepts for type constraints
 template <typename T>
 concept tb_same =
     std::is_same_v<T, tb_uint128_t> || std::is_same_v<T, tb_transfer_t> ||
@@ -40,12 +46,14 @@ template <typename T>
 concept tb_integral =
     std::is_integral_v<T> && sizeof(T) == sizeof(tb_uint128_t);
 
+// Constants and type aliases
 constexpr size_t MAX_MESSAGE_SIZE = (1024 * 1024) - 256;
 template <std::size_t N> using accountID = std::array<tb_uint128_t, N>;
 template <std::size_t N> using transferID = std::array<tb_uint128_t, N>;
 template <std::size_t N> using transfer = std::array<tb_transfer_t, N>;
 template <std::size_t N> using account = std::array<tb_account_t, N>;
 
+// Concepts for array types
 template <std::size_t N>
 concept AccountID = requires { typename accountID<N>; };
 template <std::size_t N>
@@ -54,59 +62,70 @@ template <std::size_t N>
 concept TransferArray = requires { typename transfer<N>; };
 template <std::size_t N>
 concept AccountArray = requires { typename account<N>; };
+
+// Factory functions
 template <std::size_t N>
   requires AccountID<N>
 auto make_account() {
   return account<N>{};
 }
+
 template <std::size_t N>
   requires TransferArray<N>
 auto make_transfer() {
   return transfer<N>{};
 }
 
-// Synchronization context between the callback and the main thread.
 struct CompletionContext {
   std::array<uint8_t, MAX_MESSAGE_SIZE> reply;
-  int size;
-  bool completed;
+  int size = 0;
+  bool completed = false;
   std::mutex mutex;
+  std::condition_variable cv; // For efficient waiting
 };
 
 inline void default_on_completion([[maybe_unused]] uintptr_t context,
                                   [[maybe_unused]] tb_packet_t *packet,
                                   [[maybe_unused]] uint64_t timestamp,
                                   const uint8_t *data, uint32_t size) {
-  auto ctx = static_cast<CompletionContext *>(packet->user_data);
+  auto *ctx = static_cast<CompletionContext *>(packet->user_data);
   {
-    std::lock_guard<std::mutex> lock(
-        ctx->mutex); // Lock the mutex before accessing ctx members
-    std::copy(data, data + size, ctx->reply.begin());
-    ctx->size = size;
+    std::lock_guard lock(ctx->mutex);
+    std::span<const uint8_t> data_span(data, size);
+    std::copy(data_span.begin(), data_span.end(), ctx->reply.begin());
+    ctx->size = static_cast<int>(size);
     ctx->completed = true;
   }
+  ctx->cv.notify_one(); // Notify the waiting thread
 }
 
 class Client {
 public:
-  explicit Client(const std::string &address,
+  using CallbackFn = std::function<void(uintptr_t, tb_packet_t *, uint64_t,
+                                        const uint8_t *, uint32_t)>;
+
+  explicit Client(std::string_view address,
                   std::array<uint8_t, 16> cluster_id = {},
                   uintptr_t on_completion_ctx = 0,
-                  void (*on_completion_fn)(uintptr_t, tb_packet_t *, uint64_t,
-                                           const uint8_t *,
-                                           uint32_t) = &default_on_completion)
-      : client{} {
-    status =
-        tb_client_init(&client, cluster_id.data(), address.c_str(),
-                       address.length(), on_completion_ctx, on_completion_fn);
+                  CallbackFn on_completion_fn = default_on_completion)
+      : client{}, callback(std::move(on_completion_fn)) {
+    // Pass this as context, use static wrapper
+    status = tb_client_init(&client, cluster_id.data(), address.data(),
+                            address.length(), reinterpret_cast<uintptr_t>(this),
+                            &Client::static_on_completion);
+    client_status = (status == TB_INIT_STATUS::TB_INIT_SUCCESS)
+                        ? TB_CLIENT_STATUS::TB_CLIENT_OK
+                        : TB_CLIENT_STATUS::TB_CLIENT_INVALID;
   }
-
+  // Delete copy operations
   Client(const Client &) = delete;
   Client &operator=(const Client &) = delete;
 
-  Client(Client &&other) noexcept : client{} {
+  // Move operations
+  Client(Client &&other) noexcept : client{}, status{}, client_status{} {
     std::swap(client, other.client);
     std::swap(status, other.status);
+    std::swap(client_status, other.client_status);
   }
 
   Client &operator=(Client &&other) noexcept {
@@ -114,38 +133,57 @@ public:
       destroy();
       std::swap(client, other.client);
       std::swap(status, other.status);
+      std::swap(client_status, other.client_status);
     }
     return *this;
   }
 
   ~Client() noexcept {
-    if (client_status == TB_CLIENT_OK) {
+    if (client_status == TB_CLIENT_STATUS::TB_CLIENT_OK) {
       destroy();
     }
   }
 
-  tb_client_t *get() { return &client; }
-  const tb_client_t *get() const { return &client; }
+  // Accessors
+  std::optional<std::unique_ptr<tb_client_t>> get() {
+    return client.opaque[0] != 0 ? std::optional<std::unique_ptr<tb_client_t>>(
+                                       std::make_unique<tb_client_t>(client))
+                                 : std::nullopt;
+  }
+  std::optional<std::unique_ptr<const tb_client_t>> get() const {
+    return client.opaque[0] != 0
+               ? std::optional<std::unique_ptr<const tb_client_t>>(
+                     std::make_unique<const tb_client_t>(client))
+               : std::nullopt;
+  }
   TB_INIT_STATUS initStatus() const { return status; }
   TB_CLIENT_STATUS clientStatus() const { return client_status; }
 
+  // Send request with efficient waiting
   void send_request(tb_packet_t &packet, CompletionContext *ctx) {
     ctx->completed = false;
     {
-      std::lock_guard<std::mutex> lock(ctx->mutex);
+      std::lock_guard lock(ctx->mutex);
       client_status = tb_client_submit(&client, &packet);
     }
-    if (client_status == TB_CLIENT_OK) {
-      while (true) {
-        std::lock_guard<std::mutex> lock(ctx->mutex);
-        if (ctx->completed) {
-          break;
-        }
-      }
+    if (client_status == TB_CLIENT_STATUS::TB_CLIENT_OK) {
+      std::unique_lock lock(ctx->mutex);
+      ctx->cv.wait(lock, [ctx] { return ctx->completed; });
     }
   }
 
 private:
+  // Static wrapper to call the stored std::function
+  static void static_on_completion([[maybe_unused]] uintptr_t context,
+                                   [[maybe_unused]] tb_packet_t *packet,
+                                   [[maybe_unused]] uint64_t timestamp,
+                                   const uint8_t *data, uint32_t size) {
+    auto *self = reinterpret_cast<Client *>(context);
+    if (self->callback) {
+      self->callback(context, packet, timestamp, data, size);
+    }
+  }
+
   void destroy() {
     if (client.opaque[0] != 0) {
       client_status = tb_client_deinit(&client);
@@ -156,6 +194,8 @@ private:
   tb_client_t client;
   TB_INIT_STATUS status;
   TB_CLIENT_STATUS client_status;
+  CallbackFn callback; // Stored std::function
 };
+
 } // namespace tigerbeetle
 #endif // TB_CLIENT_HPP
