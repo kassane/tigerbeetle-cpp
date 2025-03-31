@@ -79,7 +79,7 @@ if(BUILD_TESTS)
     FetchContent_Declare(
         doc
         GIT_REPOSITORY "https://github.com/doctest/doctest.git"
-        GIT_TAG v2.4.11
+        GIT_TAG dev
     )
     FetchContent_GetProperties(doc)
 endif()
