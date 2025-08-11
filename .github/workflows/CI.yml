@@ -16,7 +16,7 @@ jobs:
         runs-on: [ubuntu-24.04-arm, ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.runs-on }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: recursive
           fetch-depth: 0
@@ -42,7 +42,7 @@ jobs:
         - { sys: ucrt64,  env: ucrt-x86_64 } # ucrt + libstdc++
         - { sys: clang64, env: clang-x86_64 } # ucrt + libc++
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           path: temp
           submodules: recursive

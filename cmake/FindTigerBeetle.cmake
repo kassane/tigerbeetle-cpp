@@ -28,7 +28,7 @@ if(RUN_INSTALL_ZIG)
         if(WIN32)
             # Run install_zig.bat script
             execute_process(
-                COMMAND cmd /c ${TIGERBEETLE_ROOT_DIR}/zig/download.bat
+                COMMAND powershell -ExecutionPolicy Bypass -File ${TIGERBEETLE_ROOT_DIR}/zig/download.ps1
                 WORKING_DIRECTORY ${TIGERBEETLE_ROOT_DIR}
                 RESULT_VARIABLE INSTALL_ZIG_RESULT
             )
