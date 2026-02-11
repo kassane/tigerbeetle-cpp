@@ -7,12 +7,11 @@
  C++ version: 20
 
 **Libraries**
-- fmtlib v11.1
+- fmtlib
 - TigerBeetle C client library (latest version - branch main)
 
 **Tools**
 - cmake v3.14 or higher
-- zig v0.13.0 (tigerbeetle compatible)
 
 
 ### How to Build and Run
